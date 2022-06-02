@@ -29,6 +29,24 @@ impl Add for Position {
         Position::new(self.x + rhs.x, self.y + rhs.y)
     }
 }
+impl Sub for Position {
+    type Output = Position;
+    fn sub(self, rhs: Position) -> Self::Output {
+        Position::new(
+            self.x - rhs.x,
+            self.y - rhs.y,
+            )
+    }
+}
+impl Neg for Position {
+    type Output = Position;
+    fn neg(self) -> Self::Output {
+        Position::new(
+        -self.x,
+        -self.y,
+        )
+    }
+}
 impl AddAssign for Position {
     fn add_assign(&mut self, other: Position) {
         self.x += other.x;
@@ -43,27 +61,26 @@ impl SubAssign for Position {
 }
 
 pub struct ImageTransformation {
-    pub zoom_factor: f64,
-    pub viewport: Option<Rect>,
-    zoom_target: Position,
+    zoom_factor: f64,
     drag_position: Position,
 }
 impl ImageTransformation {
     pub fn new() -> Self {
         ImageTransformation {
-            zoom_factor: 0.,
-            viewport: None,
-            zoom_target: Position::new(0., 0.),
+            zoom_factor: 1.,
             drag_position: Position::new(0., 0.),
         }
     }
-    pub fn set_zoom() {
-
-    }
     pub fn get_zoom_factor(&self) -> f64 { self.zoom_factor }
     pub fn set_zoom_factor(&mut self, zoom_factor: f64) { self.zoom_factor = zoom_factor }
-    pub fn get_zoom_target(&self) -> Position { self.zoom_target }
-    pub fn set_zoom_target(&mut self, zoom_target: Position) { self.zoom_target = zoom_target }
     pub fn get_drag_position(&self) -> Position { self.drag_position }
     pub fn set_drag_position(&mut self, drag_position: Position) { self.drag_position = drag_position }
+}
+impl Clone for ImageTransformation {
+    fn clone(&self) -> Self {
+        ImageTransformation {
+            zoom_factor: self.zoom_factor,
+            drag_position: self.drag_position,
+        }
+    }
 }

@@ -12,7 +12,7 @@ mod events;
 mod view_widget;
 
 
-
+#[windows_subsystem = "windows"] // Don't show the console at launch on windows
 fn main() {
     // Get command line arguments
     let args: Vec<String> = env::args().collect();

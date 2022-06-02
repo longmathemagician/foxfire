@@ -4,29 +4,42 @@ use image::{DynamicImage, ImageBuffer};
 
 use druid::piet::{ImageFormat, InterpolationMode, PietImage};
 use druid::widget::prelude::*;
-use druid::{Color, Point, Rect};
-use druid::platform_menus::mac::file::print;
+use druid::{Color, Rect, Cursor, Menu, MenuItem};
 
 
 
 use crate::events::*;
-use crate::events::MouseEvent::Click;
 use crate::types::*;
 
+//#[derive(Data)]
 pub struct ImageView {
     image_path: String,
-    image_src: mpsc::Receiver<DynamicImage>,
+    //#[data(ignore)]
+    image_src: Option<mpsc::Receiver<DynamicImage>>,
     image_data: DynamicImage,
     image_size: Size,
     image_cached: Option<PietImage>,
     event_queue: Option<MouseEvent>,
     transform: ImageTransformation,
 }
+impl Clone for ImageView {
+    fn clone(&self) -> Self {
+        ImageView {
+            image_path: self.image_path.clone(),
+            image_src: None,
+            image_data: self.image_data.clone(),
+            image_size: self.image_size.clone(),
+            image_cached: self.image_cached.clone(),
+            event_queue: None,
+            transform: self.transform.clone(),
+        }
+    }
+}
 impl ImageView {
     pub fn new(path: String, source: mpsc::Receiver<DynamicImage>) -> Self {
         ImageView {
             image_path: path,
-            image_src: source,
+            image_src: Some(source),
             image_data: DynamicImage::ImageRgb8(ImageBuffer::new(1, 1)),
             image_size: Size::new(1., 1.),
             image_cached: None,
@@ -47,9 +60,8 @@ impl ImageView {
         let image_aspect_ratio = image.width / image.height;
         let container_aspect_ratio = container.width / container.height;
 
-
-        let mut target_width: f64;
-        let mut target_height: f64;
+        let target_width: f64;
+        let target_height: f64;
 
         if container_aspect_ratio > image_aspect_ratio { // the container is wider than the image
             target_height = image.height / current_zoom;
@@ -92,74 +104,70 @@ impl ImageView {
         // println!("Returned rect (w/ sf={}): {}", scale_factor, target_scaled_offset);
         target_scaled_offset
     }
-    fn get_src_rect(&mut self, image: Size, container: Size, drag_pos: Option<Position>, save_drag: bool, click_pos: Option<Position>, zoom_factor: f64) -> Rect {
-        let zoom: f64 = (1.+self.transform.get_zoom_factor());
-        let target = ImageView::get_return_size(image, container, zoom);
+    fn get_rect_center(rect: Rect) -> Position {
+        Position::new(
+                      rect.x0-(rect.x0-rect.x1)/2.,
+                      rect.y0-(rect.y0-rect.y1)/2.,
+                      )
+    }
+    fn get_src_rect(&mut self, image: Size, container: Size, drag_delta: Option<Position>, save_drag_delta: bool, click_pos: Option<Position>, zoom_delta: f64) -> Rect {
+        let default_zoom: f64 = self.transform.get_zoom_factor();
+        let image_viewport = ImageView::get_return_size(image, container, default_zoom);
 
-        if self.transform.viewport.is_none() {
-
-        }
-        let mut ctr = self.transform.get_drag_position();
-        if drag_pos.is_some() {
+        let mut drag_center = self.transform.get_drag_position();
+        if drag_delta.is_some() {
             let drag_delta_image_space: Position = Position::new(
-                -ImageView::map_f64(drag_pos.unwrap().x(), 0., container.width, 0., target.width),
-                -ImageView::map_f64(drag_pos.unwrap().y(), 0., container.height, 0., target.height),
+                -ImageView::map_f64(drag_delta.unwrap().x(), 0., container.width, 0., image_viewport.width),
+                -ImageView::map_f64(drag_delta.unwrap().y(), 0., container.height, 0., image_viewport.height),
             );
-            ctr += drag_delta_image_space;
-            if save_drag {
-                self.transform.set_drag_position(ctr);
+            drag_center += drag_delta_image_space;
+            if save_drag_delta {
+                self.transform.set_drag_position(drag_center);
             }
         }
 
-        let mut out: Rect = Rect::new(
+        let mut output_viewport: Rect = Rect::new(
             0.,
             0.,
-            target.width,
-            target.height,
+            image_viewport.width,
+            image_viewport.height,
         );
         let centering_offset = Position::new(
-            -target.width/2.,
-            -target.height/2.,
+            -image_viewport.width/2.,
+            -image_viewport.height/2.,
         );
-        out = ImageView::translate_rect(out, centering_offset);
-        out = ImageView::translate_rect(out, ctr);
-        println!("CTR{}", ctr);
+        output_viewport = ImageView::translate_rect(output_viewport, centering_offset);
+        output_viewport = ImageView::translate_rect(output_viewport, drag_center);
         if click_pos.is_some() {
-            // println!("Old image center: {}", ctr);
-            let ck_ps_is = Position::new(
-                ImageView::map_f64(click_pos.unwrap().x, 0., container.width, 0., target.width) + (ctr.x-target.width/2.),
-                ImageView::map_f64(click_pos.unwrap().y, 0., container.height, 0., target.height) + (ctr.y-target.height/2.),
+            let click_position_image_space = Position::new(
+                ImageView::map_f64(click_pos.unwrap().x, 0., container.width, 0., image_viewport.width) + (drag_center.x- image_viewport.width/2.),
+                ImageView::map_f64(click_pos.unwrap().y, 0., container.height, 0., image_viewport.height) + (drag_center.y- image_viewport.height/2.),
             );
 
-            // println!("Zooming on: {}", ck_ps_is);
+            let mut delta_zoom_factor: f64 = 1.+ zoom_delta;
+            let zoom_factor = self.transform.get_zoom_factor() * delta_zoom_factor;
+            if zoom_factor > 100. {
+                delta_zoom_factor = 1.;
+            }
+            else if zoom_factor < 0.5 {
+                delta_zoom_factor = 1.
+            }
+            else {
+                self.transform.set_zoom_factor(zoom_factor);
+            }
 
-            // We now need to center on this point, calculate new bounds, and then rescale them back
-            let new_zoom: f64 = (1.+zoom_factor);
-            println!("{}", self.transform.get_zoom_factor());
-
-            let ors = ImageView::scale_rect_at_position(out, new_zoom, ck_ps_is);
-            self.transform.set_zoom_target(ck_ps_is);
-            let offset:Position = Position::new(
-                (image.width/2. - ck_ps_is.x) / new_zoom - (image.width/2. - ck_ps_is.x),
-                (image.height/2. - ck_ps_is.y) / new_zoom - (image.height/2. - ck_ps_is.y),
-            );
-
-
-            // (image.width/2. - ck_ps_is.x) / new_zoom - (image.width/2. - ck_ps_is.x),
-            //     (image.height/2. - ck_ps_is.y) / new_zoom - (image.height/2. - ck_ps_is.y),
+            let output_viewport_scaled = ImageView::scale_rect_at_position(output_viewport, delta_zoom_factor, click_position_image_space);
+            let offset:Position = ImageView::get_rect_center(output_viewport_scaled) - ImageView::get_rect_center(output_viewport);
             self.transform.set_drag_position(self.transform.get_drag_position() + offset);
-            self.transform.zoom_factor *= new_zoom;//BAD
-            self.transform.zoom_factor =
-                if self.transform.zoom_factor > 10. { 10. }
-                else if self.transform.zoom_factor < -0.9 { -0.9 }
-                else { self.transform.zoom_factor };
-            out = ors;
+            
+
+            output_viewport = output_viewport_scaled;
         }
 
-        out
+        output_viewport
     }
 
-    fn get_dst_rect(&self, image: Size, container: Size) -> Rect {
+    fn get_dst_rect(&self, container: Size) -> Rect {
         Rect::new(
             0.,
             0.,
@@ -198,6 +206,7 @@ impl Widget<String> for ImageView {
                 if mouse_event.button.is_left() {
                     let new_drag_event = DragEvent::new(mouse_pos, false);
                     self.event_queue = Some(MouseEvent::Drag(new_drag_event));
+                    _ctx.set_cursor(&Cursor::Crosshair);
                 } else if mouse_event.button.is_right() {
                     let click_event = ClickEvent::new(mouse_pos);
                     self.event_queue = Some(MouseEvent::Click(click_event));
@@ -235,7 +244,7 @@ impl Widget<String> for ImageView {
     ) {
         if let LifeCycle::WidgetAdded = _event {
             // Receive the image from the thread
-            let received_image_handle = self.image_src.recv();
+            let received_image_handle = self.image_src.take().unwrap().recv();
             self.image_data = match received_image_handle {
                 Ok(image) => {image},
                 Err(_) => DynamicImage::ImageRgb8(ImageBuffer::new(1, 1)),
@@ -251,7 +260,7 @@ impl Widget<String> for ImageView {
             );
             self.transform.set_drag_position(centered_position);
 
-            let mut new_title = "Linux Photo Viewer - ".to_string();
+            let mut new_title = "🐧 Photo Viewer - ".to_string();
             new_title.push_str(&self.image_path);
             _ctx.window().set_title(&new_title);
         }
@@ -271,7 +280,20 @@ impl Widget<String> for ImageView {
         _data: &String, 
         _env: &Env
     ) {
-        _ctx.request_paint();
+        if self.event_queue.is_some() {
+            if let Some(MouseEvent::Drag(drag_event)) = &mut self.event_queue {
+                if drag_event.is_finished() {
+                    _ctx.set_cursor(&Cursor::Arrow);
+                }
+                else if drag_event.is_new() {
+                    drag_event.mark_seen();
+                    _ctx.set_cursor(&Cursor::Crosshair);
+                }
+            }
+
+            _ctx.request_paint();
+        }
+
     }
     fn layout(
         &mut self, 
@@ -327,19 +349,21 @@ impl Widget<String> for ImageView {
             self.event_queue = None;
         }
         else if let Some(MouseEvent::Click(click_event)) = &self.event_queue {
-            tmp_click_pos = Some(click_event.get_position());
             self.event_queue = None;
         }
 
 
 
         let src_rect = self.get_src_rect(self.image_size, size, tmp_drag_pos, save_drag, tmp_click_pos, extra_zoom);
-        let dst_rect = self.get_dst_rect(src_rect.size(), size);
+        let dst_rect = self.get_dst_rect(size);
         ctx.draw_image_area(
             self.image_cached.as_ref().unwrap(),
             src_rect,
             dst_rect,
-            InterpolationMode::Bilinear,
+            InterpolationMode::NearestNeighbor,
         );
     }
 }
+// fn context_menu() -> Menu<ImageView> {
+//         Menu::empty()
+// }

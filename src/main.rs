@@ -6,15 +6,19 @@ use druid::AppLauncher;
 use druid::LocalizedString;
 use druid::WindowDesc;
 
-// Import the image view widget module
+// Import modules
+mod types;
+mod events;
 mod view_widget;
+
+
 
 fn main() {
     // Get command line arguments
     let args: Vec<String> = env::args().collect();
 
     // Set the name of the file to load from the command line args, if they exist
-    let file_name = if args.len()>1 {args[1].clone()} else {String::from("/home/steve/1.jpg")};
+    let file_name = if args.len()>1 {args[1].clone()} else {String::from("/home/steve/Projects/foxfire/1.jpg")};
 
     // Send the name of the file to the thread that will load the image in the background
     let (tx_name, rx_name) = mpsc::channel();

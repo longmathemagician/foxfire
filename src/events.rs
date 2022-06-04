@@ -27,7 +27,7 @@ pub struct DragEvent {
     start_pos: Position,
     delta_pos: Position,
     finished: bool,
-    updated: bool,
+    is_new: bool,
 }
 impl DragEvent {
     pub fn new(start_pos: Position, finished: bool,) -> Self {
@@ -36,7 +36,7 @@ impl DragEvent {
             start_pos,
             delta_pos,
             finished,
-            updated: false,
+            is_new: true,
         }
     }
     pub fn get_delta(&self) -> Position {
@@ -54,8 +54,8 @@ impl DragEvent {
     pub fn complete(&mut self) {
         self.finished = true;
     }
-    pub fn is_new(&self) -> bool { self.updated }
-    pub fn mark_seen(&mut self) { self.updated = true }
+    pub fn is_new(&self) -> bool { self.is_new }
+    pub fn mark_seen(&mut self) { self.is_new = true }
 
 
 }

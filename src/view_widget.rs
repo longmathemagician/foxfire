@@ -5,13 +5,14 @@ use image::{DynamicImage, ImageBuffer};
 use druid::piet::{ImageFormat, InterpolationMode, PietImage};
 use druid::widget::prelude::*;
 use druid::{Color, Rect, Cursor, Menu, MenuItem};
+use druid::widget::Label;
 
 
-
+use crate::data::*;
 use crate::events::*;
 use crate::types::*;
 
-//#[derive(Data)]
+#[derive(Data)]
 pub struct ImageView {
     image_path: String,
     //#[data(ignore)]
@@ -182,7 +183,7 @@ impl Widget<String> for ImageView {
         &mut self, 
         _ctx: &mut EventCtx, 
         _event: &Event, 
-        _data: &mut String, 
+        _data: &mut ImageView,
         _env: &Env
     ) {
         if let Event::Wheel(mouse_event) = _event {
@@ -206,7 +207,7 @@ impl Widget<String> for ImageView {
                 if mouse_event.button.is_left() {
                     let new_drag_event = DragEvent::new(mouse_pos, false);
                     self.event_queue = Some(MouseEvent::Drag(new_drag_event));
-                    _ctx.set_cursor(&Cursor::Crosshair);
+                    // _ctx.set_cursor(&Cursor::Crosshair);
                 } else if mouse_event.button.is_right() {
                     let click_event = ClickEvent::new(mouse_pos);
                     self.event_queue = Some(MouseEvent::Click(click_event));
@@ -239,10 +240,11 @@ impl Widget<String> for ImageView {
         &mut self, 
         _ctx: &mut LifeCycleCtx, 
         _event: &LifeCycle, 
-        _data: &String, 
+        _data: &ImageView,
         _env: &Env,
     ) {
         if let LifeCycle::WidgetAdded = _event {
+            println!("Lifecycle");
             // Receive the image from the thread
             let received_image_handle = self.image_src.take().unwrap().recv();
             self.image_data = match received_image_handle {
@@ -250,10 +252,24 @@ impl Widget<String> for ImageView {
                 Err(_) => DynamicImage::ImageRgb8(ImageBuffer::new(1, 1)),
             };
 
-            self.image_size = Size::new(
-                self.image_data.width() as f64, 
+            let size = Size::new(
+                self.image_data.width() as f64,
                 self.image_data.height() as f64,
             );
+            let image_aspect_ratio = size.width / size.height;
+            self.image_size = size;
+            if (size.width < 800. && size.height < 800.)
+                && (size.width > 320. && size.height > 240.) {
+                    _ctx.window().set_size(self.image_size);
+            }
+            else if (image_aspect_ratio > 0.5 && image_aspect_ratio < 3.) {
+                let match_aspect_ratio: Size = Size::new(
+                    640.,
+                    640./image_aspect_ratio,
+                );
+                _ctx.window().set_size(match_aspect_ratio);
+            }
+
             let centered_position: Position = Position::new(
                 self.image_size.width/2.,
                 self.image_size.height/2.,
@@ -276,8 +292,8 @@ impl Widget<String> for ImageView {
     }
     fn update(&mut self, 
         _ctx: &mut UpdateCtx, 
-        _old_data: &String, 
-        _data: &String, 
+        _old_data: &ImageView,
+        _data: &ImageView,
         _env: &Env
     ) {
         if self.event_queue.is_some() {
@@ -299,7 +315,7 @@ impl Widget<String> for ImageView {
         &mut self, 
         _layout_ctx: &mut LayoutCtx, 
         bc: &BoxConstraints, 
-        _data: &String, 
+        _data: &ImageView,
         _env: &Env,
     ) -> Size {
         if bc.is_width_bounded() && bc.is_height_bounded() {
@@ -310,7 +326,7 @@ impl Widget<String> for ImageView {
         }
 
     }
-    fn paint(&mut self, ctx: &mut PaintCtx, _data: &String, _env: &Env) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _data: &ImageView, _env: &Env) {
         let size = ctx.size();
         let rect = size.to_rect();
         ctx.fill(rect, &Color::WHITE);
@@ -325,27 +341,21 @@ impl Widget<String> for ImageView {
             );
             self.image_cached = Some(image_result.unwrap());
         }
-        let mut tmp_drag_pos: Option<Position> = None;
-        let mut save_drag: bool = false;
-        let mut tmp_click_pos: Option<Position> = None;
-        let mut extra_zoom: f64 = 0.;
+        let mut drag_position_delta: Option<Position> = None;
+        let mut save_drag_position: bool = false;
+        let mut zoom_target: Option<Position> = None;
+        let mut zoom_factor: f64 = 0.;
 
         if let Some(MouseEvent::Drag(drag_event)) = &mut self.event_queue {
-            tmp_drag_pos = Some(drag_event.get_delta());
+            drag_position_delta = Some(drag_event.get_delta());
             if drag_event.is_finished() {
-                save_drag = true;
+                save_drag_position = true;
                 self.event_queue = None;
             }
         }
         else if let Some(MouseEvent::Zoom(zoom_event)) = &self.event_queue {
-            // self.transform.zoom_factor += 0.;//-zoom_event.get_magnitude()/1000.;
-            // self.transform.zoom_factor =
-            //     if self.transform.zoom_factor > 10. { 10. }
-            //     else if self.transform.zoom_factor < -0.9 { -0.9 }
-            //     else { self.transform.zoom_factor };
-            extra_zoom = -zoom_event.get_magnitude()/1000.;
-            // self.transform.set_zoom_target(zoom_event.get_position());
-            tmp_click_pos = Some(zoom_event.get_position());
+            zoom_factor = -zoom_event.get_magnitude()/1000.;
+            zoom_target = Some(zoom_event.get_position());
             self.event_queue = None;
         }
         else if let Some(MouseEvent::Click(click_event)) = &self.event_queue {
@@ -354,7 +364,7 @@ impl Widget<String> for ImageView {
 
 
 
-        let src_rect = self.get_src_rect(self.image_size, size, tmp_drag_pos, save_drag, tmp_click_pos, extra_zoom);
+        let src_rect = self.get_src_rect(self.image_size, size, drag_position_delta, save_drag_position, zoom_target, zoom_factor);
         let dst_rect = self.get_dst_rect(size);
         ctx.draw_image_area(
             self.image_cached.as_ref().unwrap(),
@@ -364,6 +374,7 @@ impl Widget<String> for ImageView {
         );
     }
 }
-// fn context_menu() -> Menu<ImageView> {
-//         Menu::empty()
+
+// pub fn build_ui() -> impl Widget<AppState> {
+//     Label::new("Hello")
 // }

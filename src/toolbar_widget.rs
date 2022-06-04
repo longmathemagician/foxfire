@@ -26,17 +26,6 @@ impl Widget<u32> for ToolbarWidget {
         _data: &u32,
         _env: &Env,
     ) -> Size {
-        // BoxConstraints are passed by the parent widget.
-        // This method can return any Size within those constraints:
-        // bc.constrain(my_size)
-        //
-        // To check if a dimension is infinite or not (e.g. scrolling):
-        // bc.is_width_bounded() / bc.is_height_bounded()
-        //
-        // bx.max() returns the maximum size of the widget. Be careful
-        // using this, since always make sure the widget is bounded.
-        // If bx.max() is used in a scrolling widget things will probably
-        // not work correctly.
         if bc.is_width_bounded() && bc.is_height_bounded() {
             bc.max()
         } else {
@@ -45,7 +34,6 @@ impl Widget<u32> for ToolbarWidget {
         }
     }
 
-    // It goes event -> update -> layout -> paint, and each method can influence the next.
     fn paint(&mut self, ctx: &mut PaintCtx, data: &u32, env: &Env) {
         let size = ctx.size();
         let rect = size.to_rect();

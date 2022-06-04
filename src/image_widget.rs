@@ -132,7 +132,7 @@ impl Widget<AppState> for ImageWidget {
         let mut image_container = anchor.lock().unwrap();
         let mut event_queue = &mut image_container.event_queue;
         if let LifeCycle::WidgetAdded = _event {
-            let mut new_title = "🐧 Photo Viewer - ".to_string();
+            let mut new_title = "🦜 Photo Viewer".to_string();
             // new_title.push_str(&self.image_path);
             _ctx.window().set_title(&new_title);
         }
@@ -176,9 +176,9 @@ impl Widget<AppState> for ImageWidget {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, data: &AppState, env: &Env) {
-        let size = ctx.size();
-        let rect = size.to_rect();
-        ctx.fill(rect, &Color::WHITE);
+        let container_size = ctx.size();
+        let container_rect = container_size.to_rect();
+        ctx.fill(container_rect, &Color::WHITE);
 
         let mut anchor = data.get_image_ref();
         let mut image_container = anchor.lock().unwrap();
@@ -192,7 +192,7 @@ impl Widget<AppState> for ImageWidget {
             );
             image_container.set_cache(image_result.unwrap());
         }
-        let image_size = image_container.get_size();
+        let image_size = image_container.get_size(); 
         //
         let mut drag_position_delta: Option<Position> = None;
         let mut save_drag_position: bool = false;
@@ -216,7 +216,7 @@ impl Widget<AppState> for ImageWidget {
         }
         //
         let image: Size = image_size;
-        let container: Size = size;
+        let container: Size = container_size;
         let drag_delta = drag_position_delta;
         let save_drag_delta = save_drag_position;
         let click_pos = zoom_target;
@@ -298,10 +298,17 @@ impl Widget<AppState> for ImageWidget {
             output_viewport = output_viewport_scaled;
         }
 
+        let container_viewport = Rect::new(
+            0.,
+            0.,
+            container_rect.width() - 0.,
+            container_rect.height() - 0.,
+        );
+
         ctx.draw_image_area(
             image_container.get_cache(),
             output_viewport,
-            rect,
+            container_viewport,
             InterpolationMode::NearestNeighbor,
         );
     }

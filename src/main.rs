@@ -42,15 +42,15 @@ fn main() {
     if args.len() > 1 {
         let file_name = args[1].clone();
         image_receiver = AsyncImageLoader::new_from_string(file_name);
+        // Load the image in the background while we set up the UI
         image_receiver.load_image();
     } else {
-        let image_bytes = include_bytes!("../resources/bananirb.png");
+        let image_bytes = include_bytes!("../resources/bananirb.jpg");
         let mut current_image = image::load_from_memory(image_bytes).unwrap();
         image_receiver = AsyncImageLoader::new_from_bytes(current_image);
     }
 
-    // Load the image in the background while we set up the UI
-
+    
 
     let main_window = WindowDesc::new(build_ui())
         .title("")

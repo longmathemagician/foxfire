@@ -57,7 +57,7 @@ impl Widget<AppState> for ContainerWidget {
             }
             let scaled_toolbar_height =
                 ((size.height/(_ctx.window().get_size().height-toolbar_height)) * toolbar_height)/2.;
-            println!("Scaled: {}", scaled_toolbar_height);
+            println!("Displaying image scaled by {}%", scaled_toolbar_height);
             image_container.center_image(scaled_toolbar_height);
         }
         self.image_widget.lifecycle(_ctx, _event, _data, _env);

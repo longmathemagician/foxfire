@@ -7,6 +7,7 @@ use std::env;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use druid::{AppLauncher, WindowDesc};
+use image::*;
 
 mod files;
 use files::*;
@@ -37,11 +38,19 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     // Set the name of the file to load from the command line args, if they exist
-    let file_name = if args.len()>1 {args[1].clone()} else {String::from("/home/steve/Projects/foxfire/1.jpg")};
+    let mut image_receiver;
+    if args.len() > 1 {
+        let file_name = args[1].clone();
+        image_receiver = AsyncImageLoader::new_from_string(file_name);
+        image_receiver.load_image();
+    } else {
+        let image_bytes = include_bytes!("../resources/bananirb.png");
+        let mut current_image = image::load_from_memory(image_bytes).unwrap();
+        image_receiver = AsyncImageLoader::new_from_bytes(current_image);
+    }
 
     // Load the image in the background while we set up the UI
-    let mut image_receiver = AsyncImageLoader::new_from_string(file_name);
-    image_receiver.load_image();
+
 
     let main_window = WindowDesc::new(build_ui())
         .title("")

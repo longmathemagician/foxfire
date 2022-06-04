@@ -3,6 +3,8 @@ use crate::files::*;
 use crate::image_container::*;
 use crate::image_widget::*;
 use crate::toolbar_widget::*;
+use image::*;
+use image::DynamicImage;
 use druid::widget::Button;
 use druid::Color;
 use druid::{Data, WidgetPod};
@@ -32,6 +34,11 @@ impl AppState {
                     let mut current_image = self.current_image.lock().unwrap();
                     current_image.set_image(new_image);
                 }
+            }
+        } else if tmp.has_image() {
+            if let Some(image) = tmp.take_image() {
+                let mut current_image = self.current_image.lock().unwrap();
+                current_image.set_image(image);
             }
         }
     }

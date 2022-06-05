@@ -36,11 +36,11 @@ use button_data::*;
 mod button_widget;
 use button_widget::*;
 
-mod data;
-use data::*;
+mod app_state;
+use app_state::*;
 
-mod view;
-use view::*;
+mod ui_builder;
+use ui_builder::*;
 
 fn main() {
     // Get command line arguments

@@ -1,40 +1,42 @@
-use druid::Data;
-use druid::image::*;
-use druid::image::DynamicImage;
-use std::sync::{Arc, Mutex};
 use druid::piet::PietImage;
 use druid::widget::SvgData;
+use druid::Data;
+use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Data)]
 pub struct ThemedButtonState {
-	pressed: bool,
-	hot: bool,
-    pub image: Arc<SvgData>,
-	pub image_hot: Arc<SvgData>,
+    event: bool,
+    pressed: bool,
+    hot: bool,
 }
 
 impl ThemedButtonState {
-    pub fn new(image: Arc<SvgData>, image_hot: Arc<SvgData>) -> Self {
+    pub fn new() -> Self {
         Self {
-			pressed: false,
-			hot: false,
-			image,
-			image_hot,
+            event: false,
+            pressed: false,
+            hot: false,
         }
     }
-	pub fn is_pressed(&self) -> bool {
-		self.pressed
-	}
-	pub fn is_hot(&self) -> bool {
-		self.hot
-	}
-	pub fn set_pressed(&mut self, state: bool) {
-		self.pressed = state;
-	}
-	pub fn set_hot(&mut self, state: bool) {
-		self.hot = state;
-	}
-	pub fn get_image(&self) -> Arc<SvgData> {
-		self.image.clone()
-	}
+    pub fn is_pressed(&self) -> bool {
+        self.pressed
+    }
+    pub fn is_hot(&self) -> bool {
+        self.hot
+    }
+    pub fn set_pressed(&mut self, state: bool) {
+        self.pressed = state;
+    }
+    pub fn set_hot(&mut self, state: bool) {
+        self.hot = state;
+    }
+    pub fn fire_event(&mut self) {
+        self.event = true;
+    }
+    pub fn clear_event(&mut self) {
+        self.event = false;
+    }
+    pub fn has_event(&self) -> bool {
+        self.event
+    }
 }

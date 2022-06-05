@@ -2,7 +2,7 @@ use druid::piet::Color;
 use druid::Widget;
 use druid::widget::{Align, Container, Label, Button, Padding, Split};
 
-use crate::data::*;
+use crate::app_state::*;
 use crate::image_widget::*;
 use crate::container::*;
 use crate::toolbar_widget::*;

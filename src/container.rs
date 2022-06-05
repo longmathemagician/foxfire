@@ -1,4 +1,4 @@
-use crate::data::*;
+use crate::app_state::*;
 use crate::image_container::*;
 use crate::image_widget::*;
 use crate::toolbar_data::*;
@@ -30,22 +30,31 @@ impl ContainerWidget {
 
 impl Widget<AppState> for ContainerWidget {
     fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut AppState, _env: &Env) {
-        if let Event::MouseDown(e) 
-            | Event::MouseUp(e)
-            | Event::MouseMove(e)
-            | Event::Wheel(e) = _event {
-                if e.window_pos.y < _ctx.window().get_size().height - _data.get_toolbar_height() {
-                    self.image_widget.event(_ctx, _event, _data, _env);
-                }
-                else if e.window_pos.y == _ctx.window().get_size().height - _data.get_toolbar_height(){
-                    self.image_widget.event(_ctx, _event, _data, _env)
-                }else {
-                    let mut anchor = _data.get_toolbar_state();
-                    let mut toolbar_state = anchor.lock().unwrap();
-                    self.toolbar.event(_ctx, _event, &mut toolbar_state, _env);
-                }
+        if let Event::MouseDown(e) | Event::MouseUp(e) | Event::MouseMove(e) | Event::Wheel(e) =
+            _event
+        {
+            if e.window_pos.y < _ctx.window().get_size().height - _data.get_toolbar_height() {
+                self.image_widget.event(_ctx, _event, _data, _env);
+            } else if e.window_pos.y == _ctx.window().get_size().height - _data.get_toolbar_height()
+            {
+                self.image_widget.event(_ctx, _event, _data, _env)
+            } else {
+                let mut anchor = _data.get_toolbar_state();
+                let mut toolbar_state = anchor.lock().unwrap();
+                self.toolbar.event(_ctx, _event, &mut toolbar_state, _env);
+            }
         } else {
             self.image_widget.event(_ctx, _event, _data, _env);
+        }
+
+        let mut anchor = _data.get_toolbar_state();
+        let mut tb_state = anchor.lock().unwrap();
+        if tb_state.get_right() {
+            println!("Need to load next image");
+            tb_state.set_right(false);
+        } else if tb_state.get_left() {
+            println!("Need to load previous image");
+            tb_state.set_left(false);
         }
     }
 
@@ -72,8 +81,10 @@ impl Widget<AppState> for ContainerWidget {
                     Size::new(640., (640. / image_aspect_ratio) + toolbar_height);
                 _ctx.window().set_size(match_aspect_ratio);
             }
-            let scaled_toolbar_height =
-                ((size.height/(_ctx.window().get_size().height-toolbar_height)) * toolbar_height)/2.;
+            let scaled_toolbar_height = ((size.height
+                / (_ctx.window().get_size().height - toolbar_height))
+                * toolbar_height)
+                / 2.;
             println!("Displaying image scaled by {}%", scaled_toolbar_height);
             image_container.center_image(scaled_toolbar_height);
         }
@@ -105,7 +116,6 @@ impl Widget<AppState> for ContainerWidget {
             Size::new(bc.max().width, toolbar_height),
         );
 
-        
         let mut anchor = _data.get_toolbar_state();
         let toolbar_state = anchor.lock().unwrap();
 

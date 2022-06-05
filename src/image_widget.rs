@@ -1,4 +1,4 @@
-use crate::data::*;
+use crate::app_state::*;
 use crate::events::*;
 use crate::image_container::*;
 use crate::types::*;
@@ -192,7 +192,7 @@ impl Widget<AppState> for ImageWidget {
             );
             image_container.set_cache(image_result.unwrap());
         }
-        let image_size = image_container.get_size(); 
+        let image_size = image_container.get_size();
         //
         let mut drag_position_delta: Option<Position> = None;
         let mut save_drag_position: bool = false;

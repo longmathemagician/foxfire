@@ -1,7 +1,8 @@
 use druid::Data;
-use image::*;
-use image::DynamicImage;
+use druid::image::*;
+use druid::image::DynamicImage;
 use std::sync::{Arc, Mutex};
+use druid::widget::SvgData;
 use crate::button_data::*;
 
 #[derive(Clone, Data)]
@@ -13,8 +14,8 @@ pub struct ToolbarState {
 
 impl ToolbarState {
     pub fn new() -> Self {
-		let fsb_normal = image::load_from_memory(include_bytes!("../resources/buttons/fullscreen.png")).unwrap();
-		let fsb_hot = image::load_from_memory(include_bytes!("../resources/buttons/fullscreen_hot.png")).unwrap();
+		let fsb_normal = include_str!("../resources/buttons/fullscreen.svg").parse::<SvgData>().unwrap();
+		let fsb_hot = include_str!("../resources/buttons/fullscreen.svg").parse::<SvgData>().unwrap();
         Self {
 			go_left: false,
 			go_right: false,

@@ -2,7 +2,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 #![allow(unused_mut)]
-
+#![windows_subsystem = "windows"]
 use std::env;
 use std::path::Path;
 use std::sync::{Arc, Mutex};

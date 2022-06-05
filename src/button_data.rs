@@ -1,19 +1,20 @@
 use druid::Data;
-use image::*;
-use image::DynamicImage;
+use druid::image::*;
+use druid::image::DynamicImage;
 use std::sync::{Arc, Mutex};
 use druid::piet::PietImage;
+use druid::widget::SvgData;
 
 #[derive(Clone, Data)]
 pub struct ThemedButtonState {
 	pressed: bool,
 	hot: bool,
-    pub image: Arc<DynamicImage>,
-	pub image_hot: Arc<DynamicImage>,
+    pub image: Arc<SvgData>,
+	pub image_hot: Arc<SvgData>,
 }
 
 impl ThemedButtonState {
-    pub fn new(image: Arc<DynamicImage>, image_hot: Arc<DynamicImage>) -> Self {
+    pub fn new(image: Arc<SvgData>, image_hot: Arc<SvgData>) -> Self {
         Self {
 			pressed: false,
 			hot: false,
@@ -33,7 +34,7 @@ impl ThemedButtonState {
 	pub fn set_hot(&mut self, state: bool) {
 		self.hot = state;
 	}
-	pub fn get_image(&self) -> Arc<DynamicImage> {
+	pub fn get_image(&self) -> Arc<SvgData> {
 		self.image.clone()
 	}
 }

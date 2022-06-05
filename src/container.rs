@@ -1,6 +1,7 @@
 use crate::data::*;
 use crate::image_container::*;
 use crate::image_widget::*;
+use crate::toolbar_data::*;
 use crate::toolbar_widget::*;
 use druid::kurbo::BezPath;
 use druid::piet::{Brush, FontFamily, ImageFormat, InterpolationMode, Text, TextLayoutBuilder};
@@ -15,21 +16,37 @@ use std::sync::Arc;
 // #[derive(Clone, Data)]
 pub struct ContainerWidget {
     image_widget: WidgetPod<AppState, ImageWidget>,
-    toolbar: WidgetPod<u32, ToolbarWidget>,
+    toolbar: WidgetPod<ToolbarState, ToolbarWidget>,
 }
 
 impl ContainerWidget {
     pub fn new() -> Self {
         Self {
             image_widget: WidgetPod::new(ImageWidget {}),
-            toolbar: WidgetPod::new(ToolbarWidget {}),
+            toolbar: WidgetPod::new(ToolbarWidget::new()),
         }
     }
 }
 
 impl Widget<AppState> for ContainerWidget {
     fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut AppState, _env: &Env) {
-        self.image_widget.event(_ctx, _event, _data, _env);
+        if let Event::MouseDown(e) 
+            | Event::MouseUp(e)
+            | Event::MouseMove(e)
+            | Event::Wheel(e) = _event {
+                if e.window_pos.y < _ctx.window().get_size().height - _data.get_toolbar_height() {
+                    self.image_widget.event(_ctx, _event, _data, _env);
+                }
+                else if e.window_pos.y == _ctx.window().get_size().height - _data.get_toolbar_height(){
+                    self.image_widget.event(_ctx, _event, _data, _env)
+                }else {
+                    let mut anchor = _data.get_toolbar_state();
+                    let mut toolbar_state = anchor.lock().unwrap();
+                    self.toolbar.event(_ctx, _event, &mut toolbar_state, _env);
+                }
+        } else {
+            self.image_widget.event(_ctx, _event, _data, _env);
+        }
     }
 
     fn lifecycle(
@@ -61,7 +78,10 @@ impl Widget<AppState> for ContainerWidget {
             image_container.center_image(scaled_toolbar_height);
         }
         self.image_widget.lifecycle(_ctx, _event, _data, _env);
-        self.toolbar.lifecycle(_ctx, _event, &(0 as u32), _env);
+
+        let mut anchor = _data.get_toolbar_state();
+        let toolbar_state = anchor.lock().unwrap();
+        self.toolbar.lifecycle(_ctx, _event, &toolbar_state, _env);
     }
 
     fn update(&mut self, _ctx: &mut UpdateCtx, _old_data: &AppState, _data: &AppState, _env: &Env) {
@@ -84,28 +104,20 @@ impl Widget<AppState> for ContainerWidget {
             Size::new(0.0, toolbar_height),
             Size::new(bc.max().width, toolbar_height),
         );
-        // toolbar_layout.constrain(Size::new(10., 80.));
-        // println!("{:#?}", toolbar_layout);
+
+        
+        let mut anchor = _data.get_toolbar_state();
+        let toolbar_state = anchor.lock().unwrap();
+
         self.toolbar
-            .layout(_layout_ctx, &toolbar_layout, &(0 as u32), _env);
+            .layout(_layout_ctx, &toolbar_layout, &toolbar_state, _env);
         self.toolbar.set_origin(
             _layout_ctx,
-            &(0 as u32),
+            &toolbar_state,
             _env,
             Point::new(0.0, bc.max().height - toolbar_height),
         );
 
-        // BoxConstraints are passed by the parent widget.
-        // This method can return any Size within those constraints:
-        // bc.constrain(my_size)
-        //
-        // To check if a dimension is infinite or not (e.g. scrolling):
-        // bc.is_width_bounded() / bc.is_height_bounded()
-        //
-        // bx.max() returns the maximum size of the widget. Be careful
-        // using this, since always make sure the widget is bounded.
-        // If bx.max() is used in a scrolling widget things will probably
-        // not work correctly.
         if bc.is_width_bounded() && bc.is_height_bounded() {
             bc.max()
         } else {
@@ -121,6 +133,10 @@ impl Widget<AppState> for ContainerWidget {
         let fill_color = Color::rgba(0.0, 0.8, 0.25, 1.);
         ctx.fill(rect, &fill_color);
         self.image_widget.paint(ctx, data, env);
-        self.toolbar.paint(ctx, &(0 as u32), env);
+
+        let mut anchor = data.get_toolbar_state();
+        let toolbar_state = anchor.lock().unwrap();
+
+        self.toolbar.paint(ctx, &toolbar_state, env);
     }
 }

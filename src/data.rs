@@ -2,6 +2,7 @@ use crate::container::*;
 use crate::files::*;
 use crate::image_container::*;
 use crate::image_widget::*;
+use crate::toolbar_data::*;
 use crate::toolbar_widget::*;
 use image::*;
 use image::DynamicImage;
@@ -15,6 +16,7 @@ use std::sync::{Arc, Mutex};
 pub struct AppState {
     current_image: Arc<Mutex<ImageContainer>>,
     image_loader: Arc<Mutex<AsyncImageLoader>>,
+    toolbar_state: Arc<Mutex<ToolbarState>>,
 }
 
 impl AppState {
@@ -22,6 +24,7 @@ impl AppState {
         Self {
             current_image: Arc::new(Mutex::new(ImageContainer::new())),
             image_loader: Arc::new(Mutex::new(AsyncImageLoader::new())),
+            toolbar_state: Arc::new(Mutex::new(ToolbarState::new()))
         }
     }
     pub fn set_current_image(&mut self) {
@@ -50,5 +53,8 @@ impl AppState {
     }
     pub fn get_toolbar_height(&self) -> f64 {
         80.0
+    }
+    pub fn get_toolbar_state(&self) -> Arc<Mutex<ToolbarState>> {
+        self.toolbar_state.clone()
     }
 }

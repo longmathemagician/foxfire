@@ -128,15 +128,10 @@ impl Widget<AppState> for ImageWidget {
         _data: &AppState,
         _env: &Env,
     ) {
-        let mut anchor = _data.get_image_ref();
-        let mut image_container = anchor.lock().unwrap();
-        let mut event_queue = &mut image_container.event_queue;
-        if let LifeCycle::WidgetAdded = _event {
-            let mut new_title = "🦜 Photo Viewer".to_string();
-            // new_title.push_str(&self.image_path);
-            _ctx.window().set_title(&new_title);
-        }
         if let LifeCycle::FocusChanged(false) | LifeCycle::HotChanged(false) = _event {
+            let mut anchor = _data.get_image_ref();
+            let mut image_container = anchor.lock().unwrap();
+            let mut event_queue = &mut image_container.event_queue;
             if let Some(MouseEvent::Drag(drag_event)) = &mut event_queue {
                 drag_event.complete();
             }

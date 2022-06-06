@@ -17,6 +17,7 @@ use std::sync::{Arc, Mutex};
 pub struct AppState {
     current_image: Arc<Mutex<ImageContainer>>,
     current_image_index: usize,
+    current_image_name: String,
     image_recenter_required: bool,
     image_list: Arc<Vec<PathBuf>>,
     image_loader: Arc<Mutex<AsyncImageLoader>>,
@@ -28,6 +29,7 @@ impl AppState {
         Self {
             current_image: Arc::new(Mutex::new(ImageContainer::new())),
             current_image_index: 0,
+            current_image_name: String::new(),
             image_recenter_required: true,
             image_list: Arc::new(Vec::new()),
             image_loader: Arc::new(Mutex::new(AsyncImageLoader::new())),
@@ -86,6 +88,14 @@ impl AppState {
         } else {
             self.current_image_index += 1;
         }
+        self.current_image_name = self.image_list[self.current_image_index]
+            .clone()
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+        println!("Current image name: {}", self.current_image_name);
         let mut image_receiver = AsyncImageLoader::new_from_string(
             &self.image_list[self.current_image_index]
                 .clone()
@@ -115,6 +125,14 @@ impl AppState {
         } else {
             self.current_image_index -= 1;
         }
+        self.current_image_name = self.image_list[self.current_image_index]
+            .clone()
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+        println!("Current image name: {}", self.current_image_name);
         let mut image_receiver = AsyncImageLoader::new_from_string(
             &self.image_list[self.current_image_index]
                 .clone()
@@ -131,5 +149,11 @@ impl AppState {
                 self.image_recenter_required = true;
             }
         }
+    }
+    pub fn get_image_name(&self) -> String {
+        self.current_image_name.clone()
+    }
+    pub fn set_current_image_name(&mut self, name: String) {
+        self.current_image_name = name;
     }
 }

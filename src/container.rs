@@ -58,8 +58,10 @@ impl Widget<AppState> for ContainerWidget {
         }
         // _ctx.request_paint();
         if _data.get_image_freshness() {
-            println!("FRESH IMAGE< REFRESHING");
             _data.set_image_freshness(false);
+            let mut new_title = "🦜 Photo Viewer - ".to_string();
+            new_title.push_str(&*_data.get_image_name());
+            _ctx.window().set_title(&new_title);
             let mut anchor = _data.get_image_ref();
             let mut image_container = anchor.lock().unwrap();
             let size = image_container.get_size();
@@ -71,7 +73,11 @@ impl Widget<AppState> for ContainerWidget {
                 * toolbar_height)
                 / 2.;
             println!("Displaying image scaled by {}%", scaled_toolbar_height);
-            image_container.center_image(scaled_toolbar_height);
+            image_container.center_image(
+                _ctx.window().get_size(),
+                toolbar_height,
+                scaled_toolbar_height,
+            );
             _ctx.request_paint();
         }
     }
@@ -104,7 +110,11 @@ impl Widget<AppState> for ContainerWidget {
                 * toolbar_height)
                 / 2.;
             println!("Displaying image scaled by {}%", scaled_toolbar_height);
-            image_container.center_image(scaled_toolbar_height);
+            image_container.center_image(
+                _ctx.window().get_size(),
+                toolbar_height,
+                scaled_toolbar_height,
+            );
         }
 
         self.image_widget.lifecycle(_ctx, _event, _data, _env);

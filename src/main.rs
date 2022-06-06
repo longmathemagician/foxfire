@@ -6,6 +6,7 @@
 use druid::{AppLauncher, WindowDesc};
 use image::*;
 use std::env;
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
@@ -68,7 +69,12 @@ fn main() {
 
     for entry in current_folder.read_dir().expect("read_dir call failed") {
         if let Ok(entry) = entry {
-            files.push(entry.path());
+            if (entry.path().extension() == Some(OsStr::new("jpg")))
+                | (entry.path().extension() == Some(OsStr::new("jpeg")))
+                | (entry.path().extension() == Some(OsStr::new("png")))
+            {
+                files.push(entry.path());
+            }
         }
     }
 
@@ -88,6 +94,8 @@ fn main() {
     let mut initial_state = AppState::new();
     initial_state.set_image_handler(Arc::new(Mutex::new(image_receiver)));
     initial_state.set_current_image();
+    initial_state
+        .set_current_image_name(file_path.file_name().unwrap().to_str().unwrap().to_string());
     initial_state.set_image_list(current_index, files);
 
     AppLauncher::with_window(main_window)

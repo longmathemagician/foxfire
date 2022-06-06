@@ -59,13 +59,20 @@ impl ImageContainer {
         self.image_data = Some(new_image);
         self.image_cache = None;
     }
-    pub fn center_image(&mut self, scaled_toolbar_offset: f64) {
+    pub fn center_image(
+        &mut self,
+        container: Size,
+        unscaled_toolbar_offset: f64,
+        scaled_toolbar_offset: f64,
+    ) {
+        self.transform = ImageTransformation::new();
+        let image = self.image_size;
+        let image_aspect_ratio = image.width / image.height;
+        let container_aspect_ratio = container.width / (container.height - unscaled_toolbar_offset);
         self.transform = ImageTransformation::new();
         if self.image_data.is_some() {
-            let centered_position: Position = Position::new(
-                self.image_size.width / 2.,
-                self.image_size.height / 2. + scaled_toolbar_offset,
-            );
+            let centered_position: Position =
+                Position::new(image.width / 2., image.height / 2. + scaled_toolbar_offset);
             self.transform.set_drag_position(centered_position);
         }
     }

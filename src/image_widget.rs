@@ -9,7 +9,7 @@ use druid::{
     Affine, AppLauncher, Color, Cursor, FontDescriptor, LocalizedString, Point, Rect, TextLayout,
     WindowDesc,
 };
-use image::{DynamicImage, ImageBuffer};
+use image::{DynamicImage, EncodableLayout, ImageBuffer};
 use std::sync::Arc;
 
 #[derive(Clone, Data)]
@@ -133,12 +133,12 @@ impl Widget<AppState> for ImageWidget {
             let mut event_queue = &mut image_container.event_queue;
             if let Some(MouseEvent::Drag(drag_event)) = &mut event_queue {
                 drag_event.complete();
+                _ctx.request_paint();
             }
         }
     }
 
     fn update(&mut self, _ctx: &mut UpdateCtx, _old_data: &AppState, _data: &AppState, _env: &Env) {
-        println!("UPDATE");
         let mut anchor = _data.get_image_ref();
         let mut image_container = anchor.lock().unwrap();
         if image_container.event_queue.is_some() {
@@ -150,7 +150,6 @@ impl Widget<AppState> for ImageWidget {
                     _ctx.set_cursor(&Cursor::Crosshair);
                 }
             }
-            // _ctx.request_paint();
         }
     }
 
@@ -178,22 +177,20 @@ impl Widget<AppState> for ImageWidget {
         let mut image_container = anchor.lock().unwrap();
         if !image_container.has_cache() {
             let cached_image_size = image_container.get_size();
+            let image_rgba = image_container.get_image().clone().into_rgba8();
             let image_result = ctx.make_image(
                 cached_image_size.width as usize,
                 cached_image_size.height as usize,
-                image_container.get_image().as_bytes(),
-                ImageFormat::Rgb,
+                image_rgba.as_bytes(),
+                ImageFormat::RgbaSeparate,
             );
             image_container.set_cache(image_result.unwrap());
         }
         let image_size = image_container.get_size();
-        //
         let mut drag_position_delta: Option<Position> = None;
         let mut save_drag_position: bool = false;
         let mut zoom_target: Option<Position> = None;
         let mut zoom_factor: f64 = 0.;
-
-        // println!("{:#?}", image_container.event_queue);
 
         if let Some(MouseEvent::Drag(drag_event)) = &image_container.event_queue {
             drag_position_delta = Some(drag_event.get_delta());

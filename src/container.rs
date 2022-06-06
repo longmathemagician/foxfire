@@ -34,11 +34,10 @@ impl Widget<AppState> for ContainerWidget {
             _event
         {
             if e.window_pos.y < _ctx.window().get_size().height - _data.get_toolbar_height() {
+                _ctx.set_focus(self.image_widget.id());
                 self.image_widget.event(_ctx, _event, _data, _env);
-            } else if e.window_pos.y == _ctx.window().get_size().height - _data.get_toolbar_height()
-            {
-                self.image_widget.event(_ctx, _event, _data, _env)
             } else {
+                _ctx.set_focus(self.toolbar.id());
                 let mut anchor = _data.get_toolbar_state();
                 let mut toolbar_state = anchor.lock().unwrap();
                 self.toolbar.event(_ctx, _event, &mut toolbar_state, _env);

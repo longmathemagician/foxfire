@@ -83,8 +83,9 @@ fn main() {
 
     // Find & save index of the initial file
     for (index, entry) in files.iter().enumerate() {
-        if entry.file_stem() == file_path.file_stem() {
+        if entry.file_name() == file_path.file_name() {
             current_index = index;
+            break;
         }
     }
 

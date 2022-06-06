@@ -97,11 +97,10 @@ impl AppState {
             .to_string();
         println!("Current image name: {}", self.current_image_name);
         let mut image_receiver = AsyncImageLoader::new_from_string(
-            &self.image_list[self.current_image_index]
+            self.image_list[self.current_image_index]
                 .clone()
                 .to_str()
-                .unwrap()
-                .to_string(),
+                .unwrap(),
         );
         image_receiver.load_image();
         if let Some(mut received_image_handle) = image_receiver.take_image_receiver() {
@@ -134,11 +133,10 @@ impl AppState {
             .to_string();
         println!("Current image name: {}", self.current_image_name);
         let mut image_receiver = AsyncImageLoader::new_from_string(
-            &self.image_list[self.current_image_index]
+            self.image_list[self.current_image_index]
                 .clone()
                 .to_str()
-                .unwrap()
-                .to_string(),
+                .unwrap(),
         );
         image_receiver.load_image();
         if let Some(mut received_image_handle) = image_receiver.take_image_receiver() {

@@ -30,22 +30,16 @@ impl ImageContainer {
         self.image_data.as_ref().unwrap()
     }
     pub fn has_cache(&self) -> bool {
-        match self.image_cache {
-            Some(_) => true,
-            _ => false,
-        }
+        matches!(self.image_cache, Some(_))
     }
     pub fn set_cache(&mut self, cached_image: PietImage) {
         self.image_cache = Some(cached_image);
     }
     pub fn get_cache(&self) -> &PietImage {
-        &(self.image_cache.as_ref()).unwrap()
+        (self.image_cache.as_ref()).unwrap()
     }
     pub fn peek_event_queue(&self) -> Option<&MouseEvent> {
-        match &self.event_queue {
-            Some(event) => Some(&event),
-            _ => None,
-        }
+        self.event_queue.as_ref()
     }
     pub fn push_event_queue(&mut self, event: MouseEvent) {
         self.event_queue = Some(event);

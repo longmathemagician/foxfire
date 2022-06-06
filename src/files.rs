@@ -19,9 +19,9 @@ impl AsyncImageLoader {
             image: None,
         }
     }
-    pub fn new_from_string(new_path: &String) -> Self {
+    pub fn new_from_string(new_path: &str) -> Self {
         Self {
-            path: new_path.clone(),
+            path: new_path.to_string(),
             image_receiver: None,
             image: None,
         }
@@ -52,16 +52,10 @@ impl AsyncImageLoader {
         self.image_receiver.take()
     }
     pub fn has_receiver(&self) -> bool {
-        match &self.image_receiver {
-            Some(_) => true,
-            _ => false,
-        }
+        matches!(&self.image_receiver, Some(_))
     }
     pub fn has_image(&self) -> bool {
-        match &self.image {
-            Some(_) => true,
-            None => false,
-        }
+        matches!(&self.image, Some(_))
     }
     pub fn take_image(&mut self) -> Option<DynamicImage> {
         self.image.take()

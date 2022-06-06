@@ -16,8 +16,7 @@ use std::sync::Arc;
 pub struct ImageWidget;
 impl ImageWidget {
     fn map_f64(value: f64, in_l: f64, in_u: f64, out_l: f64, out_u: f64) -> f64 {
-        let result = out_l + (value - in_l) * (out_u - out_l) / (in_u - in_l);
-        result
+        out_l + (value - in_l) * (out_u - out_l) / (in_u - in_l)
     }
 
     fn get_return_size(image: Size, container: Size, current_zoom: f64) -> Size {
@@ -209,38 +208,30 @@ impl Widget<AppState> for ImageWidget {
         } else if let Some(MouseEvent::Click(click_event)) = &image_container.event_queue {
             image_container.event_queue = None;
         }
-        //
-        let image: Size = image_size;
-        let container: Size = container_size;
-        let drag_delta = drag_position_delta;
-        let save_drag_delta = save_drag_position;
-        let click_pos = zoom_target;
-        let zoom_delta = zoom_factor;
 
-        //
         let default_zoom: f64 = image_container.transform.get_zoom_factor();
-        let image_viewport = ImageWidget::get_return_size(image, container, default_zoom);
+        let image_viewport = ImageWidget::get_return_size(image_size, container_size, default_zoom);
 
         let mut drag_center = image_container.transform.get_drag_position();
-        if drag_delta.is_some() {
+        if let Some(drag_position_delta_unwrapped) = drag_position_delta {
             let drag_delta_image_space: Position = Position::new(
                 -ImageWidget::map_f64(
-                    drag_delta.unwrap().x(),
+                    drag_position_delta_unwrapped.x(),
                     0.,
-                    container.width,
+                    container_size.width,
                     0.,
                     image_viewport.width,
                 ),
                 -ImageWidget::map_f64(
-                    drag_delta.unwrap().y(),
+                    drag_position_delta_unwrapped.y(),
                     0.,
-                    container.height,
+                    container_size.height,
                     0.,
                     image_viewport.height,
                 ),
             );
             drag_center += drag_delta_image_space;
-            if save_drag_delta {
+            if save_drag_position {
                 image_container.transform.set_drag_position(drag_center);
             }
         }
@@ -251,25 +242,25 @@ impl Widget<AppState> for ImageWidget {
             Position::new(-image_viewport.width / 2., -image_viewport.height / 2.);
         output_viewport = ImageWidget::translate_rect(output_viewport, centering_offset);
         output_viewport = ImageWidget::translate_rect(output_viewport, drag_center);
-        if click_pos.is_some() {
+        if let Some(zoom_target_unwrapped) = zoom_target {
             let click_position_image_space = Position::new(
                 ImageWidget::map_f64(
-                    click_pos.unwrap().x,
+                    zoom_target_unwrapped.x,
                     0.,
-                    container.width,
+                    container_size.width,
                     0.,
                     image_viewport.width,
                 ) + (drag_center.x - image_viewport.width / 2.),
                 ImageWidget::map_f64(
-                    click_pos.unwrap().y,
+                    zoom_target_unwrapped.y,
                     0.,
-                    container.height,
+                    container_size.height,
                     0.,
                     image_viewport.height,
                 ) + (drag_center.y - image_viewport.height / 2.),
             );
 
-            let mut delta_zoom_factor: f64 = 1. + zoom_delta;
+            let mut delta_zoom_factor: f64 = 1. + zoom_factor;
             let zoom_factor = image_container.transform.get_zoom_factor() * delta_zoom_factor;
             if zoom_factor > 100. {
                 delta_zoom_factor = 1.;

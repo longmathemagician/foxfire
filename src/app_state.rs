@@ -4,17 +4,21 @@ use crate::image_container::*;
 use crate::image_widget::*;
 use crate::toolbar_data::*;
 use crate::toolbar_widget::*;
-use image::*;
-use image::DynamicImage;
 use druid::widget::Button;
 use druid::Color;
 use druid::{Data, WidgetPod};
+use image::DynamicImage;
+use image::*;
 use std::borrow::{Borrow, BorrowMut};
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Data)]
 pub struct AppState {
     current_image: Arc<Mutex<ImageContainer>>,
+    current_image_index: usize,
+    image_recenter_required: bool,
+    image_list: Arc<Vec<PathBuf>>,
     image_loader: Arc<Mutex<AsyncImageLoader>>,
     toolbar_state: Arc<Mutex<ToolbarState>>,
 }
@@ -23,9 +27,22 @@ impl AppState {
     pub fn new() -> Self {
         Self {
             current_image: Arc::new(Mutex::new(ImageContainer::new())),
+            current_image_index: 0,
+            image_recenter_required: true,
+            image_list: Arc::new(Vec::new()),
             image_loader: Arc::new(Mutex::new(AsyncImageLoader::new())),
-            toolbar_state: Arc::new(Mutex::new(ToolbarState::new()))
+            toolbar_state: Arc::new(Mutex::new(ToolbarState::new())),
         }
+    }
+    pub fn get_image_freshness(&self) -> bool {
+        self.image_recenter_required
+    }
+    pub fn set_image_freshness(&mut self, state: bool) {
+        self.image_recenter_required = state;
+    }
+    pub fn set_image_list(&mut self, index: usize, list: Vec<PathBuf>) {
+        self.current_image_index = index;
+        self.image_list = Arc::new(list);
     }
     pub fn set_current_image(&mut self) {
         let mut tmp = self.image_loader.lock().unwrap();
@@ -56,5 +73,63 @@ impl AppState {
     }
     pub fn get_toolbar_state(&self) -> Arc<Mutex<ToolbarState>> {
         self.toolbar_state.clone()
+    }
+    pub fn load_next_image(&mut self) {
+        println!(
+            "Next image requested. Current index {}/{}",
+            self.current_image_index,
+            self.image_list.len()
+        );
+        if self.current_image_index >= self.image_list.len() - 1 {
+            println!("Current image is last in folder, wrapping");
+            self.current_image_index = 0;
+        } else {
+            self.current_image_index += 1;
+        }
+        let mut image_receiver = AsyncImageLoader::new_from_string(
+            &self.image_list[self.current_image_index]
+                .clone()
+                .to_str()
+                .unwrap()
+                .to_string(),
+        );
+        image_receiver.load_image();
+        if let Some(mut received_image_handle) = image_receiver.take_image_receiver() {
+            let potential_image = received_image_handle.recv();
+            if let Ok(new_image) = potential_image {
+                let mut current_image = self.current_image.lock().unwrap();
+                current_image.set_image(new_image);
+                self.image_recenter_required = true;
+            }
+        }
+    }
+    pub fn load_prev_image(&mut self) {
+        println!(
+            "Previous image requested. Current index {}/{}",
+            self.current_image_index,
+            self.image_list.len()
+        );
+        if self.current_image_index == 0 {
+            println!("Current image is first in folder, wrapping to last");
+            self.current_image_index = self.image_list.len() - 1;
+        } else {
+            self.current_image_index -= 1;
+        }
+        let mut image_receiver = AsyncImageLoader::new_from_string(
+            &self.image_list[self.current_image_index]
+                .clone()
+                .to_str()
+                .unwrap()
+                .to_string(),
+        );
+        image_receiver.load_image();
+        if let Some(mut received_image_handle) = image_receiver.take_image_receiver() {
+            let potential_image = received_image_handle.recv();
+            if let Ok(new_image) = potential_image {
+                let mut current_image = self.current_image.lock().unwrap();
+                current_image.set_image(new_image);
+                self.image_recenter_required = true;
+            }
+        }
     }
 }

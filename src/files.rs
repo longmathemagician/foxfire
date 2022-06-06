@@ -1,9 +1,9 @@
-use std::{env, thread};
+use image::DynamicImage;
 use std::ops::{Deref, DerefMut};
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, mpsc, Mutex};
 use std::sync::mpsc::Receiver;
-use image::DynamicImage;
+use std::sync::{mpsc, Arc, Mutex};
+use std::{env, thread};
 
 pub struct AsyncImageLoader {
     path: String,
@@ -19,9 +19,9 @@ impl AsyncImageLoader {
             image: None,
         }
     }
-    pub fn new_from_string(path: String) -> Self {
+    pub fn new_from_string(new_path: &String) -> Self {
         Self {
-            path,
+            path: new_path.clone(),
             image_receiver: None,
             image: None,
         }

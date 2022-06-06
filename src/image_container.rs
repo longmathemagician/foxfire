@@ -57,8 +57,10 @@ impl ImageContainer {
         let size = Size::new(new_image.width() as f64, new_image.height() as f64);
         self.image_size = size;
         self.image_data = Some(new_image);
+        self.image_cache = None;
     }
     pub fn center_image(&mut self, scaled_toolbar_offset: f64) {
+        self.transform = ImageTransformation::new();
         if self.image_data.is_some() {
             let centered_position: Position = Position::new(
                 self.image_size.width / 2.,

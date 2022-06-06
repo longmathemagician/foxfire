@@ -50,11 +50,29 @@ impl Widget<AppState> for ContainerWidget {
         let mut anchor = _data.get_toolbar_state();
         let mut tb_state = anchor.lock().unwrap();
         if tb_state.get_right() {
-            println!("Need to load next image");
+            _data.load_next_image();
             tb_state.set_right(false);
         } else if tb_state.get_left() {
-            println!("Need to load previous image");
+            _data.load_prev_image();
             tb_state.set_left(false);
+        }
+        // _ctx.request_paint();
+        if _data.get_image_freshness() {
+            println!("FRESH IMAGE< REFRESHING");
+            _data.set_image_freshness(false);
+            let mut anchor = _data.get_image_ref();
+            let mut image_container = anchor.lock().unwrap();
+            let size = image_container.get_size();
+            let toolbar_height = _data.get_toolbar_height();
+            let image_aspect_ratio = size.width / size.height;
+
+            let scaled_toolbar_height = ((size.height
+                / (_ctx.window().get_size().height - toolbar_height))
+                * toolbar_height)
+                / 2.;
+            println!("Displaying image scaled by {}%", scaled_toolbar_height);
+            image_container.center_image(scaled_toolbar_height);
+            _ctx.request_paint();
         }
     }
 
@@ -88,6 +106,7 @@ impl Widget<AppState> for ContainerWidget {
             println!("Displaying image scaled by {}%", scaled_toolbar_height);
             image_container.center_image(scaled_toolbar_height);
         }
+
         self.image_widget.lifecycle(_ctx, _event, _data, _env);
 
         let mut anchor = _data.get_toolbar_state();

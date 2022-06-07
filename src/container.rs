@@ -54,8 +54,11 @@ impl Widget<AppState> for ContainerWidget {
         } else if tb_state.get_left() {
             _data.load_prev_image();
             tb_state.set_left(false);
-        }
-        // _ctx.request_paint();
+        } else if tb_state.get_recenter() {
+            _data.recenter_on_next_paint();
+            tb_state.set_recenter(false);
+            _ctx.request_paint();
+        } 
         if _data.get_image_freshness() {
             _data.set_image_freshness(false);
             let mut new_title = "🦜 Photo Viewer - ".to_string();

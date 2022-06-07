@@ -154,4 +154,7 @@ impl AppState {
     pub fn set_current_image_name(&mut self, name: String) {
         self.current_image_name = name;
     }
+    pub fn recenter_on_next_paint(&mut self) {
+        self.image_recenter_required = true;
+    }
 }

@@ -221,6 +221,9 @@ impl Widget<ToolbarState> for ToolbarWidget {
         } else if _data.prev_button.has_event() {
             _data.prev_button.clear_event();
             _data.set_left(true);
+        } else if _data.recenter_button.has_event() {
+            _data.recenter_button.clear_event();
+            _data.set_recenter(true);
         }
     }
 

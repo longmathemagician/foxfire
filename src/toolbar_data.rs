@@ -7,6 +7,7 @@ use std::sync::{Arc, Mutex};
 pub struct ToolbarState {
     go_left: bool,
     go_right: bool,
+    recenter: bool,
     pub fullscreen_button: ThemedButtonState,
     pub next_button: ThemedButtonState,
     pub prev_button: ThemedButtonState,
@@ -22,6 +23,7 @@ impl ToolbarState {
         Self {
             go_left: false,
             go_right: false,
+            recenter: false,
             fullscreen_button: ThemedButtonState::new(),
             next_button: ThemedButtonState::new(),
             prev_button: ThemedButtonState::new(),
@@ -38,10 +40,16 @@ impl ToolbarState {
     pub fn get_right(&self) -> bool {
         self.go_right
     }
+    pub fn get_recenter(&self) -> bool {
+        self.recenter
+    }
     pub fn set_left(&mut self, state: bool) {
         self.go_left = state;
     }
     pub fn set_right(&mut self, state: bool) {
         self.go_right = state;
+    }
+    pub fn set_recenter(&mut self, state: bool) {
+        self.recenter = state;
     }
 }

@@ -10,6 +10,11 @@ pub struct ToolbarState {
     pub fullscreen_button: ThemedButtonState,
     pub next_button: ThemedButtonState,
     pub prev_button: ThemedButtonState,
+    pub rotate_right_button: ThemedButtonState,
+    pub rotate_left_button: ThemedButtonState,
+    pub delete_button: ThemedButtonState,
+    pub recenter_button: ThemedButtonState,
+    pub zoom_button: ThemedButtonState,
 }
 
 impl ToolbarState {
@@ -20,6 +25,11 @@ impl ToolbarState {
             fullscreen_button: ThemedButtonState::new(),
             next_button: ThemedButtonState::new(),
             prev_button: ThemedButtonState::new(),
+            rotate_right_button: ThemedButtonState::new(),
+            rotate_left_button: ThemedButtonState::new(),
+            delete_button: ThemedButtonState::new(),
+            recenter_button: ThemedButtonState::new(),
+            zoom_button: ThemedButtonState::new(),
         }
     }
     pub fn get_left(&self) -> bool {

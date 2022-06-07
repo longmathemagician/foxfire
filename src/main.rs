@@ -73,9 +73,13 @@ fn main() {
         .expect("read_dir call failed")
         .flatten()
     {
+        // TODO: Case insensitivity
         if (entry.path().extension() == Some(OsStr::new("jpg")))
             | (entry.path().extension() == Some(OsStr::new("jpeg")))
+            | (entry.path().extension() == Some(OsStr::new("JPG")))
+            | (entry.path().extension() == Some(OsStr::new("JPEG")))
             | (entry.path().extension() == Some(OsStr::new("png")))
+            | (entry.path().extension() == Some(OsStr::new("PNG")))
         {
             files.push(entry.path());
         }
@@ -104,6 +108,7 @@ fn main() {
 
     // Launch program
     AppLauncher::with_window(main_window)
+    .log_to_console()
         .launch(initial_state)
         .expect("Error: error.");
 }

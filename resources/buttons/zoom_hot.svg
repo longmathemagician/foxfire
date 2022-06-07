@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="32"
+   height="32"
+   viewBox="0 0 8.4666664 8.466667"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.2 (dc2aedaf03, 2022-05-15)"
+   sodipodi:docname="zoom_hot.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="px"
+     showgrid="false"
+     units="px"
+     width="64px"
+     inkscape:zoom="11.313709"
+     inkscape:cx="28.549436"
+     inkscape:cy="14.495689"
+     inkscape:window-width="1920"
+     inkscape:window-height="995"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="g1219"
+     inkscape:showpageshadow="0"
+     inkscape:deskcolor="#d1d1d1">
+    <inkscape:grid
+       type="xygrid"
+       id="grid9"
+       enabled="true"
+       originx="0"
+       originy="0"
+       dotted="true"
+       spacingx="0.26458334"
+       spacingy="0.26458334" />
+  </sodipodi:namedview>
+  <defs
+     id="defs2">
+    <inkscape:path-effect
+       effect="fill_between_many"
+       method="originald"
+       linkedpaths="#path28174,0,1"
+       id="path-effect35015"
+       is_visible="true"
+       lpeversion="0"
+       join="true"
+       close="true"
+       autoreverse="true"
+       applied="false" />
+    <inkscape:path-effect
+       effect="fill_between_many"
+       method="originald"
+       linkedpaths="#path28174,0,1"
+       id="path-effect32760"
+       is_visible="true"
+       lpeversion="0"
+       join="true"
+       close="true"
+       autoreverse="true" />
+    <inkscape:path-effect
+       effect="fill_between_many"
+       method="originald"
+       linkedpaths="#path28174,0,1"
+       id="path-effect32760-3"
+       is_visible="true"
+       lpeversion="0"
+       join="true"
+       close="true"
+       autoreverse="true"
+       applied="false" />
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     style="display:inline">
+    <g
+       id="g551"
+       transform="translate(-14.678744,-0.0594602)">
+      <path
+         inkscape:original-d="M 0,0"
+         inkscape:path-effect="#path-effect35015"
+         d="M 0,0"
+         id="path35005"
+         style="stroke:#81a1c1"
+         class="UnoptimicedTransforms"
+         transform="matrix(1,0,0,0.95938299,0,0.34389071)" />
+      <g
+         id="g3195"
+         transform="rotate(90,18.830023,4.2405767)">
+        <g
+           id="g1219">
+          <path
+             style="color:#000000;fill:#81a1c1;-inkscape-stroke:none"
+             d="m -3.3632813,15.818359 c -1.2489343,0 -2.2675775,1.018644 -2.2675781,2.267578 0,1.248935 1.0186434,2.267579 2.2675781,2.267579 1.2489348,0 2.2675782,-1.018644 2.2675782,-2.267579 -6e-7,-1.248934 -1.0186438,-2.267578 -2.2675782,-2.267578 z m 0,0.59375 c 0.928262,0 1.6738278,0.745567 1.6738282,1.673828 0,0.928263 -0.7455659,1.675782 -1.6738282,1.675782 -0.9282622,0 -1.6757812,-0.747519 -1.6757812,-1.675782 4e-7,-0.928261 0.7475193,-1.673828 1.6757812,-1.673828 z"
+             id="path662"
+             transform="rotate(-90)" />
+          <path
+             style="color:#000000;fill:#81a1c1;stroke-linecap:round;-inkscape-stroke:none"
+             d="m 19.804687,4.3925781 a 0.39687499,0.39687499 0 0 0 -0.52539,0.2011719 0.39687499,0.39687499 0 0 0 0.199219,0.5234375 c 0.385719,0.1730307 0.927058,0.7366682 1.755859,1.9238281 a 0.39687499,0.39687499 0 0 0 0.552734,0.097656 0.39687499,0.39687499 0 0 0 0.09766,-0.5527344 C 21.035872,5.3699977 20.474164,4.6929002 19.804687,4.3925781 Z"
+             id="path1283" />
+          <g
+             aria-label="+"
+             transform="rotate(-90)"
+             id="text2209"
+             style="font-style:italic;font-size:3.66027px;font-family:'MonoLisa Locked';-inkscape-font-specification:'MonoLisa Locked, Italic';fill:#81a1c1;stroke:#5e81ac;stroke-width:0.411781;stroke-linecap:round">
+            <path
+               style="color:#000000;-inkscape-font-specification:'MonoLisa Locked, Italic';fill:#81a1c1;stroke:none;stroke-linecap:butt;-inkscape-stroke:none"
+               d="m -3.5078125,16.955078 -0.1367188,0.783203 h -0.7832031 l -0.1328125,0.705078 h 0.7910156 L -3.90625,19.226562 h 0.7109375 l 0.1386719,-0.783203 h 0.78125 l 0.1328125,-0.705078 h -0.7890625 l 0.1386718,-0.783203 z"
+               id="path3007" />
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="Layer 2" />
+</svg>

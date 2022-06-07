@@ -2,13 +2,13 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="64"
-   height="64"
-   viewBox="0 0 16.933333 16.933334"
+   width="32"
+   height="32"
+   viewBox="0 0 8.4666664 8.466667"
    version="1.1"
    id="svg5"
    inkscape:version="1.2 (dc2aedaf03, 2022-05-15)"
-   sodipodi:docname="fullscreen_active.svg"
+   sodipodi:docname="del.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -25,15 +25,15 @@
      showgrid="false"
      units="px"
      width="64px"
-     inkscape:zoom="3.9999998"
-     inkscape:cx="38.750002"
-     inkscape:cy="25.750001"
+     inkscape:zoom="8.0000004"
+     inkscape:cx="8.9999996"
+     inkscape:cy="-11.624999"
      inkscape:window-width="1920"
      inkscape:window-height="995"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer1"
+     inkscape:current-layer="g1219"
      inkscape:showpageshadow="0"
      inkscape:deskcolor="#d1d1d1">
     <inkscape:grid
@@ -48,6 +48,12 @@
   </sodipodi:namedview>
   <defs
      id="defs2">
+    <rect
+       x="-19.445436"
+       y="5.8336307"
+       width="18.031222"
+       height="25.013901"
+       id="rect1977" />
     <inkscape:path-effect
        effect="fill_between_many"
        method="originald"
@@ -63,7 +69,12 @@
        effect="fill_between_many"
        method="originald"
        linkedpaths="#path28174,0,1"
-       id="path-effect32760" />
+       id="path-effect32760"
+       is_visible="true"
+       lpeversion="0"
+       join="true"
+       close="true"
+       autoreverse="true" />
     <inkscape:path-effect
        effect="fill_between_many"
        method="originald"
@@ -81,38 +92,35 @@
      inkscape:groupmode="layer"
      id="layer1"
      style="display:inline">
-    <path
-       id="path37"
-       style="fill:#4c566a;stroke-width:0.202406"
-       d="M 15.081251,8.4666672 A 6.614584,6.6145835 0 0 1 8.4666672,15.081251 6.614584,6.6145835 0 0 1 1.8520832,8.4666672 6.614584,6.6145835 0 0 1 8.4666672,1.8520837 6.614584,6.6145835 0 0 1 15.081251,8.4666672 Z" />
+    <g
+       id="g551"
+       transform="translate(-14.678744,-0.0594602)">
+      <path
+         inkscape:original-d="M 0,0"
+         inkscape:path-effect="#path-effect35015"
+         d="M 0,0"
+         id="path35005"
+         style="stroke:#81a1c1"
+         class="UnoptimicedTransforms"
+         transform="matrix(1,0,0,0.95938299,0,0.34389071)" />
+      <g
+         id="g1219"
+         transform="rotate(90,18.830023,4.2405767)">
+        <g
+           aria-label="X"
+           transform="matrix(0,-0.68021349,0.64511692,0,10.914158,-6.3625523)"
+           id="text1975"
+           style="font-style:italic;font-size:12px;font-family:'MonoLisa Locked';-inkscape-font-specification:'MonoLisa Locked, Italic';white-space:pre;shape-inside:url(#rect1977);display:inline;fill:#bf616a;stroke:#4c566a;stroke-width:0;fill-opacity:1">
+          <path
+             d="m -12.977313,8.1513757 -2.303999,3.2400003 -1.152,-3.2400003 h -1.344 l 1.716,4.1400003 -3.240001,4.26 h 1.344001 l 2.363999,-3.336 1.2,3.336 h 1.332 l -1.727999,-4.26 3.156,-4.1400003 z"
+             id="path298"
+             style="fill:#bf616a;fill-opacity:1" />
+        </g>
+      </g>
+    </g>
   </g>
   <g
      inkscape:groupmode="layer"
      id="layer2"
-     inkscape:label="Layer 2">
-    <g
-       id="g26411"
-       transform="matrix(0.91666666,0,0,0.91666666,0.70555567,0.70555567)">
-      <path
-         id="rect24361"
-         style="fill:#88c0d0;stroke-width:0.529167"
-         d="M 4.4979167,5.5562501 H 12.435417 V 11.377084 H 4.4979167 Z" />
-      <g
-         id="g26302">
-        <path
-           style="fill:#a3be8c;stroke-width:0.264583px"
-           d="M 4.4979168,11.377084 V 9.2604172 c 0,0 0.2537666,-0.9544186 1.3121,-0.9544186 1.0583333,0 1.8226571,1.0051791 2.4585164,1.0942343 0.7699919,0.1078412 0.9764444,0.013271 2.2715758,-0.3151495 0.863045,-0.2188519 1.895308,0.1753338 1.895308,0.1753338 v 2.1166668 z"
-           id="path25038"
-           sodipodi:nodetypes="ccsssccc" />
-        <path
-           id="path26177"
-           style="fill:#ebcb8b;stroke-width:0.66146"
-           d="M 10.847917,7.2760425 A 0.66145831,0.66145831 0 0 1 10.186459,7.9375008 0.66145831,0.66145831 0 0 1 9.5250003,7.2760425 0.66145831,0.66145831 0 0 1 10.186459,6.6145841 0.66145831,0.66145831 0 0 1 10.847917,7.2760425 Z" />
-        <path
-           style="color:#000000;fill:#e5e9f0;-inkscape-stroke:none"
-           d="m 4.2324219,5.2910156 v 0.296875 6.0546874 H 12.699219 V 5.2910156 Z M 4.8242187,5.8828125 H 12.109375 V 11.050781 H 4.8242187 Z"
-           id="rect23747" />
-      </g>
-    </g>
-  </g>
+     inkscape:label="Layer 2" />
 </svg>

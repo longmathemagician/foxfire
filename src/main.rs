@@ -57,6 +57,7 @@ fn main() {
         image_receiver.load_image();
     } else {
         // Duplicate, but absolute path is required for parent call (???)
+        // NOTE: If compiling on another system, alter hardcoded path in file_name it'll panic on directory listing
         file_name = String::from("/home/steve/Projects/foxfire/resources/bananirb.jpg");
         let image_bytes = include_bytes!("../resources/bananirb.jpg");
         let mut current_image = image::load_from_memory(image_bytes).unwrap();

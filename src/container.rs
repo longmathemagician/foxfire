@@ -8,7 +8,7 @@ use druid::piet::{Brush, FontFamily, ImageFormat, InterpolationMode, Text, TextL
 use druid::widget::prelude::*;
 use druid::{
     Affine, AppLauncher, Color, FontDescriptor, LocalizedString, Point, Rect, TextLayout,
-    WindowDesc,
+    WindowDesc, KeyEvent, KbKey
 };
 use druid::{Data, WidgetPod};
 use std::sync::Arc;
@@ -30,7 +30,14 @@ impl ContainerWidget {
 
 impl Widget<AppState> for ContainerWidget {
     fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut AppState, _env: &Env) {
-        if let Event::MouseDown(e) | Event::MouseUp(e) | Event::MouseMove(e) | Event::Wheel(e) =
+        if let Event::KeyDown(k) = _event {
+            if k.key == KbKey::ArrowRight {
+                _data.load_next_image();
+            } else if k.key == KbKey::ArrowLeft {
+                _data.load_prev_image();
+            }
+        }
+        else if let Event::MouseDown(e) | Event::MouseUp(e) | Event::MouseMove(e) | Event::Wheel(e) =
             _event
         {
             if e.window_pos.y < _ctx.window().get_size().height - _data.get_toolbar_height() {

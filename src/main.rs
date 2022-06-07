@@ -9,6 +9,7 @@ use std::env;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
+use dark_light::*;
 
 mod files;
 use files::*;
@@ -100,7 +101,11 @@ fn main() {
         .window_size((640., 480.));
 
     //Set initial state
-    let mut initial_state = AppState::new();
+    let theme_state = match dark_light::detect() {
+        dark_light::Mode::Dark => { true },
+        dark_light::Mode::Light => { false },
+    };
+    let mut initial_state = AppState::new(theme_state);
     initial_state.set_image_handler(Arc::new(Mutex::new(image_receiver)));
     initial_state.set_current_image();
     initial_state

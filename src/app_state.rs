@@ -22,10 +22,11 @@ pub struct AppState {
     image_list: Arc<Vec<PathBuf>>,
     image_loader: Arc<Mutex<AsyncImageLoader>>,
     toolbar_state: Arc<Mutex<ToolbarState>>,
+    pub dark_theme_enabled: bool,
 }
 
 impl AppState {
-    pub fn new() -> Self {
+    pub fn new(dark_theme_enabled: bool) -> Self {
         Self {
             current_image: Arc::new(Mutex::new(ImageContainer::new())),
             current_image_index: 0,
@@ -33,7 +34,8 @@ impl AppState {
             image_recenter_required: true,
             image_list: Arc::new(Vec::new()),
             image_loader: Arc::new(Mutex::new(AsyncImageLoader::new())),
-            toolbar_state: Arc::new(Mutex::new(ToolbarState::new())),
+            toolbar_state: Arc::new(Mutex::new(ToolbarState::new(dark_theme_enabled))),
+            dark_theme_enabled,
         }
     }
     pub fn get_image_freshness(&self) -> bool {

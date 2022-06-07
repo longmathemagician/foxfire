@@ -171,7 +171,13 @@ impl Widget<AppState> for ImageWidget {
     fn paint(&mut self, ctx: &mut PaintCtx, data: &AppState, env: &Env) {
         let container_size = ctx.size();
         let container_rect = container_size.to_rect();
-        ctx.fill(container_rect, &Color::WHITE);
+
+        if data.dark_theme_enabled {
+            ctx.fill(container_rect, &Color::BLACK);
+        } else {
+            ctx.fill(container_rect, &Color::WHITE);
+        }
+        
 
         let mut anchor = data.get_image_ref();
         let mut image_container = anchor.lock().unwrap();

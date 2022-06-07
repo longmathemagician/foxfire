@@ -26,6 +26,7 @@ pub struct ToolbarWidget {
     recenter_button: WidgetPod<ThemedButtonState, ThemedButton>,
     zoom_button: WidgetPod<ThemedButtonState, ThemedButton>,
     controls_outline: WidgetPod<bool, Svg>,
+    controls_outline_dark: WidgetPod<bool, Svg>,
 }
 impl ToolbarWidget {
     pub fn new() -> Self {
@@ -142,6 +143,11 @@ impl ToolbarWidget {
                 Ok(svg) => svg,
                 Err(_) => SvgData::default(),
             };
+        let controls_outline_dark =
+            match include_str!("../resources/buttons/outline_dark.svg").parse::<SvgData>() {
+                Ok(svg) => svg,
+                Err(_) => SvgData::default(),
+            };
         Self {
             fullscreen_button: WidgetPod::new(ThemedButton::new(
                 Size::new(64., 64.),
@@ -192,6 +198,7 @@ impl ToolbarWidget {
                 zoom_active,
             )),
             controls_outline: WidgetPod::new(Svg::new(controls_outline)),
+            controls_outline_dark: WidgetPod::new(Svg::new(controls_outline_dark)),
         }
     }
 }
@@ -252,6 +259,7 @@ impl Widget<ToolbarState> for ToolbarWidget {
             .lifecycle(_ctx, _event, &_data.zoom_button, _env);
         if let LifeCycle::WidgetAdded = _event {
             self.controls_outline.lifecycle(_ctx, _event, &false, _env);
+            self.controls_outline_dark.lifecycle(_ctx, _event, &false, _env);
         }
     }
 
@@ -273,11 +281,15 @@ impl Widget<ToolbarState> for ToolbarWidget {
     ) -> Size {
         self.controls_outline
             .layout(_layout_ctx, &bc.loosen(), &false, _env);
+        self.controls_outline_dark
+            .layout(_layout_ctx, &bc.loosen(), &false, _env);
         let controls_outline_origin = Point::new(
             bc.max().width / 2. - 382.733 / 2. + 18.,
             bc.max().height / 2. - 32.,
         );
         self.controls_outline
+            .set_origin(_layout_ctx, &false, _env, controls_outline_origin);
+        self.controls_outline_dark
             .set_origin(_layout_ctx, &false, _env, controls_outline_origin);
 
 
@@ -369,10 +381,16 @@ impl Widget<ToolbarState> for ToolbarWidget {
     fn paint(&mut self, ctx: &mut PaintCtx, data: &ToolbarState, env: &Env) {
         let size = ctx.size();
         let rect = size.to_rect();
-        let fill_color = Color::rgba(1., 1., 1., 0.5);
-        ctx.fill(rect, &fill_color);
 
-        self.controls_outline.paint(ctx, &false, env);
+        if data.dark_theme_enabled {
+            let fill_color = Color::rgba(0.2, 0.2, 0.2, 0.5);
+            ctx.fill(rect, &fill_color);
+            self.controls_outline_dark.paint(ctx, &false, env);
+        } else {
+            let fill_color = Color::rgba(1., 1., 1., 0.5);
+            self.controls_outline.paint(ctx, &false, env);
+        };
+        
         self.fullscreen_button
             .paint(ctx, &data.fullscreen_button, env);
         self.next_button.paint(ctx, &data.next_button, env);

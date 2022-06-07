@@ -16,10 +16,11 @@ pub struct ToolbarState {
     pub delete_button: ThemedButtonState,
     pub recenter_button: ThemedButtonState,
     pub zoom_button: ThemedButtonState,
+    pub dark_theme_enabled: bool,
 }
 
 impl ToolbarState {
-    pub fn new() -> Self {
+    pub fn new(dark_theme_enabled: bool) -> Self {
         Self {
             go_left: false,
             go_right: false,
@@ -32,6 +33,7 @@ impl ToolbarState {
             delete_button: ThemedButtonState::new(),
             recenter_button: ThemedButtonState::new(),
             zoom_button: ThemedButtonState::new(),
+            dark_theme_enabled,
         }
     }
     pub fn get_left(&self) -> bool {

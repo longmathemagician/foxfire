@@ -6,8 +6,8 @@ use crate::toolbar_data::*;
 use druid::kurbo::BezPath;
 use druid::piet::{Brush, FontFamily, ImageFormat, InterpolationMode, Text, TextLayoutBuilder};
 use druid::widget::prelude::*;
-use druid::widget::SvgData;
 use druid::widget::Svg;
+use druid::widget::SvgData;
 use druid::{
     Affine, AppLauncher, Color, FontDescriptor, LocalizedString, Point, Rect, TextLayout,
     WindowDesc,
@@ -77,7 +77,8 @@ impl ToolbarWidget {
             Ok(svg) => svg,
             Err(_) => SvgData::default(),
         };
-        let rot_r_hot = match include_str!("../resources/buttons/rot_r_hot.svg").parse::<SvgData>() {
+        let rot_r_hot = match include_str!("../resources/buttons/rot_r_hot.svg").parse::<SvgData>()
+        {
             Ok(svg) => svg,
             Err(_) => SvgData::default(),
         };
@@ -90,7 +91,8 @@ impl ToolbarWidget {
             Ok(svg) => svg,
             Err(_) => SvgData::default(),
         };
-        let rot_l_hot = match include_str!("../resources/buttons/rot_l_hot.svg").parse::<SvgData>() {
+        let rot_l_hot = match include_str!("../resources/buttons/rot_l_hot.svg").parse::<SvgData>()
+        {
             Ok(svg) => svg,
             Err(_) => SvgData::default(),
         };
@@ -116,10 +118,11 @@ impl ToolbarWidget {
             Ok(svg) => svg,
             Err(_) => SvgData::default(),
         };
-        let recenter_hot = match include_str!("../resources/buttons/recenter_hot.svg").parse::<SvgData>() {
-            Ok(svg) => svg,
-            Err(_) => SvgData::default(),
-        };
+        let recenter_hot =
+            match include_str!("../resources/buttons/recenter_hot.svg").parse::<SvgData>() {
+                Ok(svg) => svg,
+                Err(_) => SvgData::default(),
+            };
         let recenter_active =
             match include_str!("../resources/buttons/recenter_active.svg").parse::<SvgData>() {
                 Ok(svg) => svg,
@@ -259,7 +262,8 @@ impl Widget<ToolbarState> for ToolbarWidget {
             .lifecycle(_ctx, _event, &_data.zoom_button, _env);
         if let LifeCycle::WidgetAdded = _event {
             self.controls_outline.lifecycle(_ctx, _event, &false, _env);
-            self.controls_outline_dark.lifecycle(_ctx, _event, &false, _env);
+            self.controls_outline_dark
+                .lifecycle(_ctx, _event, &false, _env);
         }
     }
 
@@ -292,7 +296,6 @@ impl Widget<ToolbarState> for ToolbarWidget {
         self.controls_outline_dark
             .set_origin(_layout_ctx, &false, _env, controls_outline_origin);
 
-
         self.fullscreen_button
             .layout(_layout_ctx, &bc.loosen(), &_data.fullscreen_button, _env);
         let fullscreen_button_origin =
@@ -322,49 +325,66 @@ impl Widget<ToolbarState> for ToolbarWidget {
         self.prev_button
             .set_origin(_layout_ctx, &_data.prev_button, _env, prev_button_origin);
 
-
-        self.rotate_right_button
-            .layout(_layout_ctx, &bc.loosen(), &_data.rotate_right_button, _env);
+        self.rotate_right_button.layout(
+            _layout_ctx,
+            &bc.loosen(),
+            &_data.rotate_right_button,
+            _env,
+        );
         let rotate_right_button_origin = Point::new(
-            bc.max().width / 2. - 16. / 2. + 68. + 2.*32. + 2.*4.,
+            bc.max().width / 2. - 16. / 2. + 68. + 2. * 32. + 2. * 4.,
             bc.max().height / 2. - 16.,
         );
-        self.rotate_right_button
-            .set_origin(_layout_ctx, &_data.rotate_right_button, _env, rotate_right_button_origin);
-
-
+        self.rotate_right_button.set_origin(
+            _layout_ctx,
+            &_data.rotate_right_button,
+            _env,
+            rotate_right_button_origin,
+        );
 
         self.rotate_left_button
             .layout(_layout_ctx, &bc.loosen(), &_data.rotate_left_button, _env);
         let rotate_left_button_origin = Point::new(
-            bc.max().width / 2. - 16. / 2. + 68. + 1.*32. + 1.*4.,
+            bc.max().width / 2. - 16. / 2. + 68. + 1. * 32. + 1. * 4.,
             bc.max().height / 2. - 16.,
         );
-        self.rotate_left_button
-            .set_origin(_layout_ctx, &_data.rotate_left_button, _env, rotate_left_button_origin);
-        
+        self.rotate_left_button.set_origin(
+            _layout_ctx,
+            &_data.rotate_left_button,
+            _env,
+            rotate_left_button_origin,
+        );
+
         self.delete_button
             .layout(_layout_ctx, &bc.loosen(), &_data.delete_button, _env);
         let delete_button_origin = Point::new(
-            bc.max().width / 2. - 16. / 2. + 68. + 3.*32. + 4.*4.,
+            bc.max().width / 2. - 16. / 2. + 68. + 3. * 32. + 4. * 4.,
             bc.max().height / 2. - 16.,
         );
-        self.delete_button
-            .set_origin(_layout_ctx, &_data.delete_button, _env, delete_button_origin);
+        self.delete_button.set_origin(
+            _layout_ctx,
+            &_data.delete_button,
+            _env,
+            delete_button_origin,
+        );
 
         self.recenter_button
             .layout(_layout_ctx, &bc.loosen(), &_data.recenter_button, _env);
         let recenter_button_origin = Point::new(
-            bc.max().width / 2. - 16. / 2. - 68. - 1.*32. - 5.*4.,
+            bc.max().width / 2. - 16. / 2. - 68. - 1. * 32. - 5. * 4.,
             bc.max().height / 2. - 16.,
         );
-        self.recenter_button
-            .set_origin(_layout_ctx, &_data.recenter_button, _env, recenter_button_origin);
+        self.recenter_button.set_origin(
+            _layout_ctx,
+            &_data.recenter_button,
+            _env,
+            recenter_button_origin,
+        );
 
         self.zoom_button
             .layout(_layout_ctx, &bc.loosen(), &_data.zoom_button, _env);
         let zoom_button_origin = Point::new(
-            bc.max().width / 2. - 16. / 2. - 68. - 2.*32. - 6.*4.,
+            bc.max().width / 2. - 16. / 2. - 68. - 2. * 32. - 6. * 4.,
             bc.max().height / 2. - 16.,
         );
         self.zoom_button
@@ -388,15 +408,18 @@ impl Widget<ToolbarState> for ToolbarWidget {
             self.controls_outline_dark.paint(ctx, &false, env);
         } else {
             let fill_color = Color::rgba(1., 1., 1., 0.5);
+            ctx.fill(rect, &fill_color);
             self.controls_outline.paint(ctx, &false, env);
         };
-        
+
         self.fullscreen_button
             .paint(ctx, &data.fullscreen_button, env);
         self.next_button.paint(ctx, &data.next_button, env);
         self.prev_button.paint(ctx, &data.prev_button, env);
-        self.rotate_right_button.paint(ctx, &data.rotate_right_button, env);
-        self.rotate_left_button.paint(ctx, &data.rotate_left_button, env);
+        self.rotate_right_button
+            .paint(ctx, &data.rotate_right_button, env);
+        self.rotate_left_button
+            .paint(ctx, &data.rotate_left_button, env);
         self.delete_button.paint(ctx, &data.delete_button, env);
         self.recenter_button.paint(ctx, &data.recenter_button, env);
         self.zoom_button.paint(ctx, &data.zoom_button, env);

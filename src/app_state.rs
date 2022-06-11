@@ -12,6 +12,7 @@ use image::*;
 use std::borrow::{Borrow, BorrowMut};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
+use wallpaper;
 
 #[derive(Clone, Data)]
 pub struct AppState {
@@ -158,5 +159,14 @@ impl AppState {
     }
     pub fn recenter_on_next_paint(&mut self) {
         self.image_recenter_required = true;
+    }
+    pub fn set_as_wallpaper(&self) {
+        wallpaper::set_mode(wallpaper::Mode::Span);
+        wallpaper::set_from_path(&self.image_list[self.current_image_index]
+            .clone()
+            .to_str()
+            .unwrap()
+            .to_string()
+        );
     }
 }

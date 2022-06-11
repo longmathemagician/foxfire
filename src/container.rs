@@ -7,8 +7,8 @@ use druid::kurbo::BezPath;
 use druid::piet::{Brush, FontFamily, ImageFormat, InterpolationMode, Text, TextLayoutBuilder};
 use druid::widget::prelude::*;
 use druid::{
-    Affine, AppLauncher, Color, FontDescriptor, KbKey, KeyEvent, LocalizedString, Point, Rect,
-    TextLayout, WindowDesc,
+    Affine, AppLauncher, Color, FontDescriptor, KbKey, KeyEvent, LocalizedString, Menu, MenuItem,
+    Point, Rect, TextLayout, WindowDesc,
 };
 use druid::{Data, WidgetPod};
 use std::sync::Arc;
@@ -30,6 +30,11 @@ impl ContainerWidget {
 
 impl Widget<AppState> for ContainerWidget {
     fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut AppState, _env: &Env) {
+        if let Event::MouseDown(e) = _event {
+            if e.button.is_right() {
+                _ctx.show_context_menu(generate_menu(), e.pos)
+            }
+        }
         if let Event::KeyDown(k) = _event {
             if k.key == KbKey::ArrowRight {
                 _data.load_next_image();
@@ -188,4 +193,11 @@ impl Widget<AppState> for ContainerWidget {
 
         self.toolbar.paint(ctx, &toolbar_state, env);
     }
+}
+
+fn generate_menu() -> Menu<AppState> {
+    Menu::empty().entry(
+        MenuItem::new(LocalizedString::new("Set as desktop bacground"))
+            .on_activate(|_ctx, data: &mut AppState, _env| data.set_as_wallpaper()),
+    )
 }

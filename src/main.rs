@@ -3,13 +3,13 @@
 #![allow(unused_variables)]
 #![allow(unused_mut)]
 #![windows_subsystem = "windows"]
+use dark_light::*;
 use druid::{AppLauncher, WindowDesc};
 use image::*;
 use std::env;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use dark_light::*;
 
 mod files;
 use files::*;
@@ -57,16 +57,14 @@ fn main() {
         // Load the image in the background while we set up the UI
         image_receiver.load_image();
     } else {
-        // Duplicate, but absolute path is required for parent call (???)
-        // NOTE: If compiling on another system, alter hardcoded path in file_name it'll panic on directory listing
-        file_name = String::from("/home/steve/Projects/foxfire/resources/bananirb.jpg");
+        file_name = String::from("./resources/bananirb.jpg");
         let image_bytes = include_bytes!("../resources/bananirb.jpg");
         let mut current_image = image::load_from_memory(image_bytes).unwrap();
         image_receiver = AsyncImageLoader::new_from_bytes(current_image);
     }
 
     // Make list of other files in current directory
-    let file_path = Path::new(&file_name);
+    let file_path = Path::new(&file_name).canonicalize().unwrap();
     let current_folder = file_path.parent().unwrap();
     let mut files: Vec<PathBuf> = Vec::new();
     let mut current_index: usize = 0;
@@ -102,8 +100,8 @@ fn main() {
 
     //Set initial state
     let theme_state = match dark_light::detect() {
-        dark_light::Mode::Dark => { true },
-        dark_light::Mode::Light => { false },
+        dark_light::Mode::Dark => true,
+        dark_light::Mode::Light => false,
     };
     let mut initial_state = AppState::new(theme_state);
     initial_state.set_image_handler(Arc::new(Mutex::new(image_receiver)));
@@ -114,7 +112,7 @@ fn main() {
 
     // Launch program
     AppLauncher::with_window(main_window)
-    .log_to_console()
+        .log_to_console()
         .launch(initial_state)
         .expect("Error: error.");
 }

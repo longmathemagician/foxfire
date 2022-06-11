@@ -3,11 +3,11 @@
 	"tasks": [
 		{
 			"type": "cargo",
-			"subcommand": "run",
+			"command": "run",
 			"problemMatcher": [
 				"$rustc"
 			],
-			"label": "Rust: cargo run - foxfire",
+			"label": "rust: cargo run",
 			"group": {
 				"kind": "build",
 				"isDefault": true

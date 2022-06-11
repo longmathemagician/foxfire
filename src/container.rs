@@ -7,8 +7,8 @@ use druid::kurbo::BezPath;
 use druid::piet::{Brush, FontFamily, ImageFormat, InterpolationMode, Text, TextLayoutBuilder};
 use druid::widget::prelude::*;
 use druid::{
-    Affine, AppLauncher, Color, FontDescriptor, LocalizedString, Point, Rect, TextLayout,
-    WindowDesc, KeyEvent, KbKey
+    Affine, AppLauncher, Color, FontDescriptor, KbKey, KeyEvent, LocalizedString, Point, Rect,
+    TextLayout, WindowDesc,
 };
 use druid::{Data, WidgetPod};
 use std::sync::Arc;
@@ -36,11 +36,12 @@ impl Widget<AppState> for ContainerWidget {
             } else if k.key == KbKey::ArrowLeft {
                 _data.load_prev_image();
             }
-        }
-        else if let Event::MouseDown(e) | Event::MouseUp(e) | Event::MouseMove(e) | Event::Wheel(e) =
-            _event
+        } else if let Event::MouseDown(e)
+        | Event::MouseUp(e)
+        | Event::MouseMove(e)
+        | Event::Wheel(e) = _event
         {
-            if e.window_pos.y < _ctx.window().get_size().height - _data.get_toolbar_height() {
+            if e.window_pos.y < _ctx.size().height - _data.get_toolbar_height() {
                 _ctx.set_focus(self.image_widget.id());
                 self.image_widget.event(_ctx, _event, _data, _env);
             } else {
@@ -65,7 +66,7 @@ impl Widget<AppState> for ContainerWidget {
             _data.recenter_on_next_paint();
             tb_state.set_recenter(false);
             _ctx.request_paint();
-        } 
+        }
         if _data.get_image_freshness() {
             _data.set_image_freshness(false);
             let mut new_title = "🦜 Photo Viewer - ".to_string();

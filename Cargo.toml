@@ -2,6 +2,7 @@
 name = "foxfire"
 version = "0.1.0"
 edition = "2021"
+build = "build.rs"
 
 [profile.dev]
 opt-level = 3
@@ -11,3 +12,6 @@ image = "0.24.2"
 druid = { git = "https://github.com/linebender/druid.git", features = ["im", "svg"] }
 dark-light = "0.2.2"
 wallpaper = "3.2.0"
+
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1"

@@ -3,6 +3,7 @@ use crate::image_container::*;
 use crate::image_widget::*;
 use crate::toolbar_data::*;
 use crate::toolbar_widget::*;
+use crate::types::Direction;
 use druid::kurbo::BezPath;
 use druid::piet::{Brush, FontFamily, ImageFormat, InterpolationMode, Text, TextLayoutBuilder};
 use druid::widget::prelude::*;
@@ -70,6 +71,14 @@ impl Widget<AppState> for ContainerWidget {
         } else if tb_state.get_recenter() {
             _data.recenter_on_next_paint();
             tb_state.set_recenter(false);
+            _ctx.request_paint();
+        } else if tb_state.get_rotate_left() {
+            _data.rotate_in_memory(Direction::Left);
+            tb_state.set_rotate_left(false);
+            _ctx.request_paint();
+        } else if tb_state.get_rotate_right() {
+            _data.rotate_in_memory(Direction::Right);
+            tb_state.set_rotate_right(false);
             _ctx.request_paint();
         }
         if _data.get_image_freshness() {

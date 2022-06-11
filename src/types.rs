@@ -90,3 +90,8 @@ impl Clone for ImageTransformation {
         }
     }
 }
+
+pub enum Direction {
+    Left,
+    Right,
+}

@@ -4,6 +4,7 @@ use crate::image_container::*;
 use crate::image_widget::*;
 use crate::toolbar_data::*;
 use crate::toolbar_widget::*;
+use crate::types::Direction;
 use druid::widget::Button;
 use druid::Color;
 use druid::{Data, WidgetPod};
@@ -162,11 +163,22 @@ impl AppState {
     }
     pub fn set_as_wallpaper(&self) {
         wallpaper::set_mode(wallpaper::Mode::Span);
-        wallpaper::set_from_path(&self.image_list[self.current_image_index]
-            .clone()
-            .to_str()
-            .unwrap()
-            .to_string()
+        wallpaper::set_from_path(
+            &self.image_list[self.current_image_index]
+                .clone()
+                .to_str()
+                .unwrap()
+                .to_string(),
         );
+    }
+    pub fn rotate_in_memory(&mut self, direction: Direction) {
+        let mut image_container_mutex = self.current_image.lock().unwrap();
+        let mut current_image = image_container_mutex.get_image();
+        let rotated_image = match direction {
+            Direction::Left => current_image.rotate270(),
+            Direction::Right => current_image.rotate90(),
+        };
+        image_container_mutex.set_image(rotated_image);
+        self.image_recenter_required = true;
     }
 }

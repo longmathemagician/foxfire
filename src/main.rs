@@ -2,6 +2,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 #![allow(unused_mut)]
+#![allow(unused_must_use)]
 #![windows_subsystem = "windows"]
 use dark_light::*;
 use druid::{AppLauncher, WindowDesc};

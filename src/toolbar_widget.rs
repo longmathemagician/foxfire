@@ -225,6 +225,7 @@ impl Widget<ToolbarState> for ToolbarWidget {
         self.zoom_button
             .event(_ctx, _event, &mut _data.zoom_button, _env);
 
+        // Single if branch because only one event should occur per event call
         if _data.next_button.has_event() {
             _data.next_button.clear_event();
             _data.set_right(true);
@@ -234,6 +235,12 @@ impl Widget<ToolbarState> for ToolbarWidget {
         } else if _data.recenter_button.has_event() {
             _data.recenter_button.clear_event();
             _data.set_recenter(true);
+        } else if _data.rotate_left_button.has_event() {
+            _data.rotate_left_button.clear_event();
+            _data.set_rotate_left(true);
+        } else if _data.rotate_right_button.has_event() {
+            _data.rotate_right_button.clear_event();
+            _data.set_rotate_right(true);
         }
     }
 

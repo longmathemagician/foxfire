@@ -6,8 +6,8 @@ use druid::kurbo::BezPath;
 use druid::piet::{Brush, FontFamily, ImageFormat, InterpolationMode, Text, TextLayoutBuilder};
 use druid::widget::prelude::*;
 use druid::{
-    Affine, AppLauncher, Color, Cursor, FontDescriptor, LocalizedString, Point, Rect, TextLayout,
-    WindowDesc,
+    Affine, AppLauncher, Color, Cursor, FontDescriptor, LocalizedString, Menu, MenuItem, Point,
+    Rect, TextLayout, WindowDesc,
 };
 use image::{DynamicImage, EncodableLayout, ImageBuffer};
 use std::sync::Arc;
@@ -96,8 +96,7 @@ impl Widget<AppState> for ImageWidget {
                     image_container.event_queue = Some(MouseEvent::Drag(new_drag_event));
                     // _ctx.set_cursor(&Cursor::Crosshair);
                 } else if mouse_event.button.is_right() {
-                    let click_event = ClickEvent::new(mouse_pos);
-                    image_container.event_queue = Some(MouseEvent::Click(click_event));
+                    _ctx.show_context_menu(generate_menu(), mouse_event.pos)
                 }
             }
             _ctx.request_paint();
@@ -301,4 +300,11 @@ impl Widget<AppState> for ImageWidget {
             InterpolationMode::NearestNeighbor,
         );
     }
+}
+
+fn generate_menu() -> Menu<AppState> {
+    Menu::empty().entry(
+        MenuItem::new(LocalizedString::new("Set as desktop bacground"))
+            .on_activate(|_ctx, data: &mut AppState, _env| data.set_as_wallpaper()),
+    )
 }

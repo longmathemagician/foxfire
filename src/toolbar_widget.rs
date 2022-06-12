@@ -13,6 +13,7 @@ use druid::{
     WindowDesc,
 };
 use druid::{Data, WidgetPod};
+use image::Rgb;
 use std::sync::Arc;
 
 // #[derive(Clone, Data)]
@@ -45,6 +46,59 @@ impl ToolbarWidget {
                 Ok(svg) => svg,
                 Err(_) => SvgData::default(),
             };
+
+
+        let fullscreen_mask_img = image::load_from_memory(include_bytes!("../resources/buttons/fullscreen_mask.bmp")).unwrap();
+        let fullscreen_mask_raw_pixels = fullscreen_mask_img.as_rgb8().unwrap();
+        let mut fullscreen_mask = vec![false; 64 * 64];
+        for i in 0..64 {
+            for j in 0..64 {
+                match fullscreen_mask_raw_pixels[(i as u32, j as u32)] {
+                    Rgb([0, 0, 0]) => fullscreen_mask[i * 63 + j] = false,
+                    _ => fullscreen_mask[i * 63 + j] = true,
+                }
+            }
+        }
+        let fullscreen_mask_ref = Arc::new(fullscreen_mask);
+
+        let next_mask_img = image::load_from_memory(include_bytes!("../resources/buttons/next_mask.bmp")).unwrap();
+        let next_mask_raw_pixels = next_mask_img.as_rgb8().unwrap();
+        let mut next_mask = vec![false; 68 * 32];
+        for i in 0..32 {
+            for j in 0..68 {
+                match next_mask_raw_pixels[(j as u32, i as u32)] {
+                    Rgb([0, 0, 0]) => next_mask[i * 67 + j] = false,
+                    _ => next_mask[i * 67 + j] = true,
+                }
+            }
+        }
+        let next_mask_ref = Arc::new(next_mask);
+
+        let prev_mask_img = image::load_from_memory(include_bytes!("../resources/buttons/prev_mask.bmp")).unwrap();
+        let prev_mask_raw_pixels = prev_mask_img.as_rgb8().unwrap();
+        let mut prev_mask = vec![false; 68 * 32];
+        for i in 0..32 {
+            for j in 0..68 {
+                match prev_mask_raw_pixels[(j as u32, i as u32)] {
+                    Rgb([0, 0, 0]) => prev_mask[i * 67 + j] = false,
+                    _ => prev_mask[i * 67 + j] = true,
+                }
+            }
+        }
+        let prev_mask_ref = Arc::new(prev_mask);
+
+        let small_mask_img = image::load_from_memory(include_bytes!("../resources/buttons/small_mask.bmp")).unwrap();
+        let small_mask_raw_pixels = small_mask_img.as_rgb8().unwrap();
+        let mut small_mask = vec![false; 32 * 32];
+        for i in 0..32 {
+            for j in 0..32 {
+                match small_mask_raw_pixels[(i as u32, j as u32)] {
+                    Rgb([0, 0, 0]) => small_mask[i * 31 + j] = false,
+                    _ => small_mask[i * 31 + j] = true,
+                }
+            }
+        }
+        let small_mask_ref = Arc::new(small_mask);
 
         let next = match include_str!("../resources/buttons/next.svg").parse::<SvgData>() {
             Ok(svg) => svg,
@@ -157,48 +211,56 @@ impl ToolbarWidget {
                 fullscreen,
                 fullscreen_hot,
                 fullscreen_active,
+                Arc::clone(&fullscreen_mask_ref),
             )),
             next_button: WidgetPod::new(ThemedButton::new(
                 Size::new(68., 32.),
                 next,
                 next_hot,
                 next_active,
+                Arc::clone(&next_mask_ref),
             )),
             prev_button: WidgetPod::new(ThemedButton::new(
                 Size::new(68., 32.),
                 prev,
                 prev_hot,
                 prev_active,
+                Arc::clone(&prev_mask_ref),
             )),
             rotate_right_button: WidgetPod::new(ThemedButton::new(
                 Size::new(32., 32.),
                 rot_r,
                 rot_r_hot,
                 rot_r_active,
+                Arc::clone(&small_mask_ref),
             )),
             rotate_left_button: WidgetPod::new(ThemedButton::new(
                 Size::new(32., 32.),
                 rot_l,
                 rot_l_hot,
                 rot_l_active,
+                Arc::clone(&small_mask_ref),
             )),
             delete_button: WidgetPod::new(ThemedButton::new(
                 Size::new(32., 32.),
                 del,
                 del_hot,
                 del_active,
+                Arc::clone(&small_mask_ref),
             )),
             recenter_button: WidgetPod::new(ThemedButton::new(
                 Size::new(32., 32.),
                 recenter,
                 recenter_hot,
                 recenter_active,
+                Arc::clone(&small_mask_ref),
             )),
             zoom_button: WidgetPod::new(ThemedButton::new(
                 Size::new(32., 32.),
                 zoom,
                 zoom_hot,
                 zoom_active,
+                Arc::clone(&small_mask_ref),
             )),
             controls_outline: WidgetPod::new(Svg::new(controls_outline)),
             controls_outline_dark: WidgetPod::new(Svg::new(controls_outline_dark)),

@@ -81,74 +81,78 @@ impl AppState {
         self.toolbar_state.clone()
     }
     pub fn load_next_image(&mut self) {
-        println!(
-            "Next image requested. Current index {}/{}",
-            self.current_image_index,
-            self.image_list.len()
-        );
-        if self.current_image_index >= self.image_list.len() - 1 {
-            println!("Current image is last in folder, wrapping");
-            self.current_image_index = 0;
-        } else {
-            self.current_image_index += 1;
-        }
-        self.current_image_name = self.image_list[self.current_image_index]
-            .clone()
-            .file_name()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_string();
-        println!("Current image name: {}", self.current_image_name);
-        let mut image_receiver = AsyncImageLoader::new_from_string(
-            self.image_list[self.current_image_index]
+        if self.image_list.len() > 0 {
+            println!(
+                "Next image requested. Current index {}/{}",
+                self.current_image_index,
+                self.image_list.len()
+            );
+            if self.current_image_index >= self.image_list.len() - 1 {
+                println!("Current image is last in folder, wrapping");
+                self.current_image_index = 0;
+            } else {
+                self.current_image_index += 1;
+            }
+            self.current_image_name = self.image_list[self.current_image_index]
                 .clone()
+                .file_name()
+                .unwrap()
                 .to_str()
-                .unwrap(),
-        );
-        image_receiver.load_image();
-        if let Some(mut received_image_handle) = image_receiver.take_image_receiver() {
-            let potential_image = received_image_handle.recv();
-            if let Ok(new_image) = potential_image {
-                let mut current_image = self.current_image.lock().unwrap();
-                current_image.set_image(new_image);
-                self.image_recenter_required = true;
+                .unwrap()
+                .to_string();
+            println!("Current image name: {}", self.current_image_name);
+            let mut image_receiver = AsyncImageLoader::new_from_string(
+                self.image_list[self.current_image_index]
+                    .clone()
+                    .to_str()
+                    .unwrap(),
+            );
+            image_receiver.load_image();
+            if let Some(mut received_image_handle) = image_receiver.take_image_receiver() {
+                let potential_image = received_image_handle.recv();
+                if let Ok(new_image) = potential_image {
+                    let mut current_image = self.current_image.lock().unwrap();
+                    current_image.set_image(new_image);
+                    self.image_recenter_required = true;
+                }
             }
         }
     }
     pub fn load_prev_image(&mut self) {
-        println!(
-            "Previous image requested. Current index {}/{}",
-            self.current_image_index,
-            self.image_list.len()
-        );
-        if self.current_image_index == 0 {
-            println!("Current image is first in folder, wrapping to last");
-            self.current_image_index = self.image_list.len() - 1;
-        } else {
-            self.current_image_index -= 1;
-        }
-        self.current_image_name = self.image_list[self.current_image_index]
-            .clone()
-            .file_name()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_string();
-        println!("Current image name: {}", self.current_image_name);
-        let mut image_receiver = AsyncImageLoader::new_from_string(
-            self.image_list[self.current_image_index]
+        if self.image_list.len() > 0 {
+            println!(
+                "Previous image requested. Current index {}/{}",
+                self.current_image_index,
+                self.image_list.len()
+            );
+            if self.current_image_index == 0 {
+                println!("Current image is first in folder, wrapping to last");
+                self.current_image_index = self.image_list.len() - 1;
+            } else {
+                self.current_image_index -= 1;
+            }
+            self.current_image_name = self.image_list[self.current_image_index]
                 .clone()
+                .file_name()
+                .unwrap()
                 .to_str()
-                .unwrap(),
-        );
-        image_receiver.load_image();
-        if let Some(mut received_image_handle) = image_receiver.take_image_receiver() {
-            let potential_image = received_image_handle.recv();
-            if let Ok(new_image) = potential_image {
-                let mut current_image = self.current_image.lock().unwrap();
-                current_image.set_image(new_image);
-                self.image_recenter_required = true;
+                .unwrap()
+                .to_string();
+            println!("Current image name: {}", self.current_image_name);
+            let mut image_receiver = AsyncImageLoader::new_from_string(
+                self.image_list[self.current_image_index]
+                    .clone()
+                    .to_str()
+                    .unwrap(),
+            );
+            image_receiver.load_image();
+            if let Some(mut received_image_handle) = image_receiver.take_image_receiver() {
+                let potential_image = received_image_handle.recv();
+                if let Ok(new_image) = potential_image {
+                    let mut current_image = self.current_image.lock().unwrap();
+                    current_image.set_image(new_image);
+                    self.image_recenter_required = true;
+                }
             }
         }
     }

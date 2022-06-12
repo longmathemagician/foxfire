@@ -52,47 +52,49 @@ fn main() {
 
     // Set the name of the file to load from the command line args, if they exist
     let mut image_receiver;
-    let mut file_name;
+    let mut file_name = String::new();
+    let mut files: Vec<PathBuf> = Vec::new();
+    let mut current_index: usize = 0;
+    let current_name: String;
     if args.len() > 1 {
         file_name = args[1].clone();
         image_receiver = AsyncImageLoader::new_from_string(&file_name);
         // Load the image in the background while we set up the UI
         image_receiver.load_image();
+        // Make list of other files in current directory
+        let file_path = Path::new(&file_name).canonicalize().unwrap();
+        let current_folder = file_path.parent().unwrap();
+
+        for entry in current_folder
+            .read_dir()
+            .expect("read_dir call failed")
+            .flatten()
+        {
+            // TODO: Case insensitivity
+            if (entry.path().extension() == Some(OsStr::new("jpg")))
+                | (entry.path().extension() == Some(OsStr::new("jpeg")))
+                | (entry.path().extension() == Some(OsStr::new("JPG")))
+                | (entry.path().extension() == Some(OsStr::new("JPEG")))
+                | (entry.path().extension() == Some(OsStr::new("png")))
+                | (entry.path().extension() == Some(OsStr::new("PNG")))
+            {
+                files.push(entry.path());
+            }
+        }
+
+        // Find & save index of the initial file
+        for (index, entry) in files.iter().enumerate() {
+            if entry.file_name() == file_path.file_name() {
+                current_index = index;
+                break;
+            }
+        }
+        current_name = file_path.file_name().unwrap().to_str().unwrap().to_string();
     } else {
-        file_name = String::from("./resources/bananirb.jpg");
         let image_bytes = include_bytes!("../resources/bananirb.jpg");
         let mut current_image = image::load_from_memory(image_bytes).unwrap();
         image_receiver = AsyncImageLoader::new_from_bytes(current_image);
-    }
-
-    // Make list of other files in current directory
-    let file_path = Path::new(&file_name).canonicalize().unwrap();
-    let current_folder = file_path.parent().unwrap();
-    let mut files: Vec<PathBuf> = Vec::new();
-    let mut current_index: usize = 0;
-    for entry in current_folder
-        .read_dir()
-        .expect("read_dir call failed")
-        .flatten()
-    {
-        // TODO: Case insensitivity
-        if (entry.path().extension() == Some(OsStr::new("jpg")))
-            | (entry.path().extension() == Some(OsStr::new("jpeg")))
-            | (entry.path().extension() == Some(OsStr::new("JPG")))
-            | (entry.path().extension() == Some(OsStr::new("JPEG")))
-            | (entry.path().extension() == Some(OsStr::new("png")))
-            | (entry.path().extension() == Some(OsStr::new("PNG")))
-        {
-            files.push(entry.path());
-        }
-    }
-
-    // Find & save index of the initial file
-    for (index, entry) in files.iter().enumerate() {
-        if entry.file_name() == file_path.file_name() {
-            current_index = index;
-            break;
-        }
+        current_name = String::from("Bananna Birb.jpeg2000");
     }
 
     // Build the UI structure
@@ -109,7 +111,7 @@ fn main() {
     initial_state.set_image_handler(Arc::new(Mutex::new(image_receiver)));
     initial_state.set_current_image();
     initial_state
-        .set_current_image_name(file_path.file_name().unwrap().to_str().unwrap().to_string());
+        .set_current_image_name(current_name);
     initial_state.set_image_list(current_index, files);
 
     // Launch program

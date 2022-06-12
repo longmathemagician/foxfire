@@ -176,7 +176,6 @@ impl Widget<AppState> for ImageWidget {
         } else {
             ctx.fill(container_rect, &Color::WHITE);
         }
-        
 
         let mut anchor = data.get_image_ref();
         let mut image_container = anchor.lock().unwrap();
@@ -286,13 +285,53 @@ impl Widget<AppState> for ImageWidget {
             output_viewport = output_viewport_scaled;
         }
 
-        let container_viewport = Rect::new(
-            0.,
-            0.,
-            container_rect.width() - 0.,
-            container_rect.height() - 0.,
-        );
+        let container_viewport;
 
+        if output_viewport.x0 < 0.
+            || output_viewport.y0 < 0.
+            || output_viewport.x1 > image_size.width
+            || output_viewport.y1 > image_size.height
+        {
+            container_viewport = Rect::new(
+                ImageWidget::map_f64(
+                    0.,
+                    output_viewport.x0,
+                    output_viewport.x1,
+                    0.,
+                    container_rect.width(),
+                ),
+                ImageWidget::map_f64(
+                    0.,
+                    output_viewport.y0,
+                    output_viewport.y1,
+                    0.,
+                    container_rect.height(),
+                ),
+                ImageWidget::map_f64(
+                    image_size.width,
+                    output_viewport.x0,
+                    output_viewport.x1,
+                    0.,
+                    container_rect.width(),
+                ),
+                ImageWidget::map_f64(
+                    image_size.height,
+                    output_viewport.y0,
+                    output_viewport.y1,
+                    0.,
+                    container_rect.height(),
+                ),
+            );
+        } else {
+            container_viewport = Rect::new(
+                0.,
+                0.,
+                container_rect.width() - 0.,
+                container_rect.height() - 0.,
+            );
+        }
+
+        println!("Image rect: {}", output_viewport);
         ctx.draw_image_area(
             image_container.get_cache(),
             output_viewport,

@@ -30,6 +30,7 @@ impl Widget<AppState> for ImageWidget {
                     mouse_event.wheel_delta.y,
                     mouse_position,
                 )));
+                _data.image_centered = false;
             }
             _ctx.request_paint();
         } else if let Event::MouseDown(mouse_event) = _event {
@@ -39,6 +40,7 @@ impl Widget<AppState> for ImageWidget {
                     let new_drag_event = DragEvent::new(mouse_pos, false);
                     image_container.event_queue = Some(MouseEvent::Drag(new_drag_event));
                     // _ctx.set_cursor(&Cursor::Crosshair);
+                    _data.image_centered = false;
                 } else if mouse_event.button.is_right() {
                     _ctx.show_context_menu(generate_menu(), mouse_event.pos)
                 }
@@ -123,29 +125,24 @@ impl Widget<AppState> for ImageWidget {
 
         let mut anchor = data.get_image_ref();
         let mut image_container = anchor.lock().unwrap();
+        let image_size = image_container.get_size();
         if !image_container.has_cache() {
-            let cached_image_size = image_container.get_size();
             let image_rgba = image_container.get_image().clone().into_rgba8();
             let image_result = ctx.make_image(
-                cached_image_size.width as usize,
-                cached_image_size.height as usize,
+                image_size.width as usize,
+                image_size.height as usize,
                 image_rgba.as_bytes(),
                 ImageFormat::RgbaSeparate,
             );
             image_container.set_cache(image_result.unwrap());
         }
-        let image_size = image_container.get_size();
-        let image_data = image_container.get_cache().clone();
-        let mut image_transform = image_container.transform;
 
-        let mut matrix = image_transform.affine_matrix;
-        let mut image_offset = image_transform.image_space_offset;
-        let mut screen_offset = image_transform.screen_space_offset;
+        let mut image_transform = image_container.transform;
 
         let image_origin_imagespace = Vec2D::from(0., 0.);
         let image_corner_imagespace =
             image_origin_imagespace + Vec2D::from(image_size.width, image_size.height);
-        let mut drag_offset_screenspace = screen_offset;
+        let mut drag_offset_screenspace = image_transform.screen_space_offset;
         if let Some(MouseEvent::Drag(drag_event)) = &image_container.event_queue {
             drag_offset_screenspace.x += drag_event.get_delta().x;
             drag_offset_screenspace.y += drag_event.get_delta().y;
@@ -157,16 +154,18 @@ impl Widget<AppState> for ImageWidget {
             let zoom_factor = -zoom_event.get_magnitude() / 500.;
             let cursor_position = zoom_event.get_position();
             let cursor_vec = Vec2D::from(cursor_position.x, cursor_position.y);
-            let mut zoom_target_prescale =
-                matrix.inverse() * (cursor_vec - drag_offset_screenspace) + image_offset;
+            let mut zoom_target_prescale = image_transform.affine_matrix.inverse()
+                * (cursor_vec - drag_offset_screenspace)
+                + image_transform.image_space_offset;
 
-            matrix.scale(1. + zoom_factor);
-            image_transform.affine_matrix = matrix;
+            image_transform.affine_matrix.scale(1. + zoom_factor);
+            image_transform.affine_matrix = image_transform.affine_matrix;
 
-            let mut zoom_target_postscale =
-                matrix.inverse() * (cursor_vec - drag_offset_screenspace) + image_offset;
-            drag_offset_screenspace =
-                drag_offset_screenspace + matrix * (zoom_target_postscale - zoom_target_prescale);
+            let mut zoom_target_postscale = image_transform.affine_matrix.inverse()
+                * (cursor_vec - drag_offset_screenspace)
+                + image_transform.image_space_offset;
+            drag_offset_screenspace = drag_offset_screenspace
+                + image_transform.affine_matrix * (zoom_target_postscale - zoom_target_prescale);
             image_transform.screen_space_offset = drag_offset_screenspace;
 
             image_container.event_queue = None;
@@ -174,10 +173,12 @@ impl Widget<AppState> for ImageWidget {
             image_container.event_queue = None;
         }
 
-        let image_origin_screenspace =
-            matrix * (image_origin_imagespace - image_offset) + drag_offset_screenspace;
-        let image_corner_screenspace =
-            matrix * (image_corner_imagespace - image_offset) + drag_offset_screenspace;
+        let image_origin_screenspace = image_transform.affine_matrix
+            * (image_origin_imagespace - image_transform.image_space_offset)
+            + drag_offset_screenspace;
+        let image_corner_screenspace = image_transform.affine_matrix
+            * (image_corner_imagespace - image_transform.image_space_offset)
+            + drag_offset_screenspace;
 
         let mut image_viewport = Rect::new(
             image_origin_imagespace.x,
@@ -194,7 +195,7 @@ impl Widget<AppState> for ImageWidget {
         );
         image_container.transform = image_transform;
         ctx.draw_image_area(
-            &image_data,
+            &image_container.get_cache(),
             image_viewport,
             container_viewport,
             InterpolationMode::NearestNeighbor,

@@ -1,3 +1,14 @@
+use std::borrow::{Borrow, BorrowMut};
+use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
+
+use druid::widget::Button;
+use druid::Color;
+use druid::{Data, WidgetPod};
+use image::DynamicImage;
+use image::*;
+use wallpaper;
+
 use crate::container::*;
 use crate::files::*;
 use crate::image_container::*;
@@ -5,19 +16,11 @@ use crate::image_widget::*;
 use crate::toolbar_data::*;
 use crate::toolbar_widget::*;
 use crate::types::Direction;
-use druid::widget::Button;
-use druid::Color;
-use druid::{Data, WidgetPod};
-use image::DynamicImage;
-use image::*;
-use std::borrow::{Borrow, BorrowMut};
-use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
-use wallpaper;
 
 #[derive(Clone, Data)]
 pub struct AppState {
     current_image: Arc<Mutex<ImageContainer>>,
+    pub image_centered: bool,
     current_image_index: usize,
     current_image_name: String,
     image_recenter_required: bool,
@@ -31,6 +34,7 @@ impl AppState {
     pub fn new(dark_theme_enabled: bool) -> Self {
         Self {
             current_image: Arc::new(Mutex::new(ImageContainer::new())),
+            image_centered: true,
             current_image_index: 0,
             current_image_name: String::new(),
             image_recenter_required: true,

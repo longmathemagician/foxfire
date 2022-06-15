@@ -1,14 +1,14 @@
 use std::any::Any;
 use std::sync::Arc;
 
+use druid::kurbo::BezPath;
+use druid::piet::{Brush, FontFamily, ImageFormat, InterpolationMode, Text, TextLayoutBuilder};
+use druid::widget::prelude::*;
 use druid::{
     Affine, AppLauncher, Color, FontDescriptor, KbKey, KeyEvent, LocalizedString, Point, Rect,
     TextLayout, WindowDesc,
 };
 use druid::{Data, WidgetPod};
-use druid::kurbo::BezPath;
-use druid::piet::{Brush, FontFamily, ImageFormat, InterpolationMode, Text, TextLayoutBuilder};
-use druid::widget::prelude::*;
 
 use crate::app_state::*;
 use crate::image_container::*;
@@ -34,30 +34,30 @@ impl ContainerWidget {
 
 impl Widget<AppState> for ContainerWidget {
     fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut AppState, _env: &Env) {
-        if let Event::WindowConnected = _event {} else {
-            if _data.get_image_freshness() && _ctx.size().width > 0. {
-                _data.set_image_freshness(false);
-                let mut new_title = "Foxfire - ".to_string();
-                new_title.push_str(&*_data.get_image_name());
-                _ctx.window().set_title(&new_title);
-                let mut anchor = _data.get_image_ref();
-                let mut image_container = anchor.lock().unwrap();
-                let size = image_container.get_size();
-                let toolbar_height = _data.get_toolbar_height();
-                let image_aspect_ratio = size.width / size.height;
+        let resizing = match _event {
+            Event::WindowSize(_) => true,
+            _ => false,
+        };
+        if (_data.get_image_freshness() | (resizing && _data.image_centered))
+            && _ctx.size().width > 0.
+        {
+            _data.set_image_freshness(false);
+            let mut new_title = "Foxfire - ".to_string();
+            new_title.push_str(&*_data.get_image_name());
+            _ctx.window().set_title(&new_title);
+            let mut anchor = _data.get_image_ref();
+            let mut image_container = anchor.lock().unwrap();
+            let size = image_container.get_size();
+            let toolbar_height = _data.get_toolbar_height();
+            let image_aspect_ratio = size.width / size.height;
 
-                let scaled_toolbar_height = ((size.height
-                    / (_ctx.size().height - toolbar_height))
-                    * toolbar_height)
-                    / 2.;
-                image_container.center_image(
-                    _ctx.size(),
-                    toolbar_height,
-                    scaled_toolbar_height,
-                );
-                _ctx.request_paint();
-            }
+            let scaled_toolbar_height =
+                ((size.height / (_ctx.size().height - toolbar_height)) * toolbar_height) / 2.;
+            image_container.center_image(_ctx.size(), toolbar_height, scaled_toolbar_height);
+            _data.image_centered = true;
+            _ctx.request_paint();
         }
+
         if let Event::KeyDown(k) = _event {
             if k.key == KbKey::ArrowRight {
                 _data.load_next_image();
@@ -91,6 +91,7 @@ impl Widget<AppState> for ContainerWidget {
             _data.load_prev_image();
             tb_state.set_left(false);
         } else if tb_state.get_recenter() {
+            _data.image_centered = true;
             _data.recenter_on_next_paint();
             tb_state.set_recenter(false);
             _ctx.request_paint();
@@ -147,7 +148,8 @@ impl Widget<AppState> for ContainerWidget {
         self.toolbar.lifecycle(_ctx, _event, &toolbar_state, _env);
     }
 
-    fn update(&mut self, _ctx: &mut UpdateCtx, _old_data: &AppState, _data: &AppState, _env: &Env) {}
+    fn update(&mut self, _ctx: &mut UpdateCtx, _old_data: &AppState, _data: &AppState, _env: &Env) {
+    }
 
     fn layout(
         &mut self,

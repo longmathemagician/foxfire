@@ -1,9 +1,11 @@
+use druid::piet::{Piet, PietImage};
+use druid::Vec2;
+use druid::widget::prelude::*;
+use image::DynamicImage;
+
 use crate::events::*;
 use crate::files::*;
 use crate::types::*;
-use druid::piet::{Piet, PietImage};
-use druid::widget::prelude::*;
-use image::DynamicImage;
 
 // #[derive(Clone, Data)]
 pub struct ImageContainer {
@@ -13,6 +15,7 @@ pub struct ImageContainer {
     pub event_queue: Option<MouseEvent>,
     pub transform: ImageTransformation,
 }
+
 impl ImageContainer {
     pub fn new() -> Self {
         Self {
@@ -59,15 +62,30 @@ impl ImageContainer {
         unscaled_toolbar_offset: f64,
         scaled_toolbar_offset: f64,
     ) {
-        self.transform = ImageTransformation::new();
-        let image = self.image_size;
-        let image_aspect_ratio = image.width / image.height;
-        let container_aspect_ratio = container.width / (container.height - unscaled_toolbar_offset);
-        self.transform = ImageTransformation::new();
         if self.image_data.is_some() {
-            let centered_position: Position =
-                Position::new(image.width / 2., image.height / 2. + scaled_toolbar_offset);
-            self.transform.set_drag_position(centered_position);
+            self.transform = ImageTransformation::new();
+            let image = self.image_size;
+            let image_aspect_ratio = image.width / image.height;
+            let container_aspect_ratio =
+                container.width / (container.height - unscaled_toolbar_offset);
+            self.transform = ImageTransformation::new();
+
+            let scale_factor: f64;
+            let centering_vector: Vec2D<f64>;
+
+            if image_aspect_ratio > container_aspect_ratio {
+                // the image is wider than the container, so match the widths to fill
+                scale_factor = container.width / image.width;
+                centering_vector = Vec2D::from(0., (container.height - unscaled_toolbar_offset) / 2. - (image.height * scale_factor) / 2.);
+            } else {
+                // the image is wider than the container, so fit the heights
+                scale_factor = (container.height - unscaled_toolbar_offset) / image.height;
+                centering_vector = Vec2D::from(container.width / 2. - (image.width * scale_factor) / 2., 0.);
+            }
+
+
+            self.transform.set_screen_space_offset(centering_vector);
+            self.transform.set_scale(scale_factor);
         }
     }
 }

@@ -1,78 +1,22 @@
+use std::sync::Arc;
+
+use druid::kurbo::BezPath;
+use druid::piet::{Brush, FontFamily, ImageFormat, InterpolationMode, Text, TextLayoutBuilder};
+use druid::platform_menus::win::file::new;
+use druid::widget::prelude::*;
+use druid::{
+    Affine, AppLauncher, Color, Cursor, FontDescriptor, LocalizedString, Menu, MenuItem, Point,
+    Rect, TextLayout, WidgetExt, WindowDesc,
+};
+use image::{DynamicImage, EncodableLayout, ImageBuffer};
+
 use crate::app_state::*;
 use crate::events::*;
 use crate::image_container::*;
 use crate::types::*;
-use druid::kurbo::BezPath;
-use druid::piet::{Brush, FontFamily, ImageFormat, InterpolationMode, Text, TextLayoutBuilder};
-use druid::widget::prelude::*;
-use druid::{
-    Affine, AppLauncher, Color, Cursor, FontDescriptor, LocalizedString, Menu, MenuItem, Point,
-    Rect, TextLayout, WindowDesc,
-};
-use image::{DynamicImage, EncodableLayout, ImageBuffer};
-use std::sync::Arc;
 
 #[derive(Clone, Data)]
 pub struct ImageWidget;
-impl ImageWidget {
-    fn map_f64(value: f64, in_l: f64, in_u: f64, out_l: f64, out_u: f64) -> f64 {
-        out_l + (value - in_l) * (out_u - out_l) / (in_u - in_l)
-    }
-
-    fn get_return_size(image: Size, container: Size, current_zoom: f64) -> Size {
-        let image_aspect_ratio = image.width / image.height;
-        let container_aspect_ratio = container.width / container.height;
-
-        let target_width: f64;
-        let target_height: f64;
-
-        if container_aspect_ratio > image_aspect_ratio {
-            // the container is wider than the image
-            target_height = image.height / current_zoom;
-            target_width = target_height * container_aspect_ratio;
-        } else {
-            // the container is taller than the image
-            target_width = image.width / current_zoom;
-            target_height = target_width / container_aspect_ratio;
-        }
-        Size::new(target_width, target_height)
-    }
-    fn translate_rect(target: Rect, translation: Position) -> Rect {
-        Rect::new(
-            target.x0 + translation.x,
-            target.y0 + translation.y,
-            target.x1 + translation.x,
-            target.y1 + translation.y,
-        )
-    }
-    fn scale_rect(target: Rect, scale_factor: f64) -> Rect {
-        let distance_to_origin: Position = Position::new(-target.x0, -target.y0);
-        let target_at_origin = ImageWidget::translate_rect(target, distance_to_origin);
-        let target_scaled = Rect::new(
-            0.,
-            0.,
-            target_at_origin.x1 / scale_factor,
-            target_at_origin.y1 / scale_factor,
-        );
-        let distance_back: Position =
-            Position::new(target.x0 / scale_factor, target.y0 / scale_factor);
-        let target_scaled_offset: Rect = ImageWidget::translate_rect(target_scaled, distance_back);
-        target_scaled_offset
-    }
-    fn scale_rect_at_position(target: Rect, scale_factor: f64, zoom_point: Position) -> Rect {
-        let distance_to_origin: Position = Position::new(-zoom_point.x, -zoom_point.y);
-        let target_at_origin = ImageWidget::translate_rect(target, distance_to_origin);
-        let target_scaled = ImageWidget::scale_rect(target_at_origin, scale_factor);
-        let target_scaled_offset: Rect = ImageWidget::translate_rect(target_scaled, zoom_point);
-        target_scaled_offset
-    }
-    fn get_rect_center(rect: Rect) -> Position {
-        Position::new(
-            rect.x0 - (rect.x0 - rect.x1) / 2.,
-            rect.y0 - (rect.y0 - rect.y1) / 2.,
-        )
-    }
-}
 
 impl Widget<AppState> for ImageWidget {
     fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut AppState, _env: &Env) {
@@ -191,150 +135,67 @@ impl Widget<AppState> for ImageWidget {
             image_container.set_cache(image_result.unwrap());
         }
         let image_size = image_container.get_size();
-        let mut drag_position_delta: Option<Position> = None;
-        let mut save_drag_position: bool = false;
-        let mut zoom_target: Option<Position> = None;
-        let mut zoom_factor: f64 = 0.;
+        let image_data = image_container.get_cache().clone();
+        let mut image_transform = image_container.transform;
 
+        let mut matrix = image_transform.affine_matrix;
+        let mut image_offset = image_transform.image_space_offset;
+        let mut screen_offset = image_transform.screen_space_offset;
+
+        let image_origin_imagespace = Vec2D::from(0., 0.);
+        let image_corner_imagespace =
+            image_origin_imagespace + Vec2D::from(image_size.width, image_size.height);
+        let mut drag_offset_screenspace = screen_offset;
         if let Some(MouseEvent::Drag(drag_event)) = &image_container.event_queue {
-            drag_position_delta = Some(drag_event.get_delta());
+            drag_offset_screenspace.x += drag_event.get_delta().x;
+            drag_offset_screenspace.y += drag_event.get_delta().y;
             if drag_event.is_finished() {
-                save_drag_position = true;
+                image_transform.screen_space_offset = drag_offset_screenspace;
                 image_container.event_queue = None;
             }
         } else if let Some(MouseEvent::Zoom(zoom_event)) = &image_container.event_queue {
-            zoom_factor = -zoom_event.get_magnitude() / 1000.;
-            zoom_target = Some(zoom_event.get_position());
+            let zoom_factor = -zoom_event.get_magnitude() / 500.;
+            let cursor_position = zoom_event.get_position();
+            let cursor_vec = Vec2D::from(cursor_position.x, cursor_position.y);
+            let mut zoom_target_prescale =
+                matrix.inverse() * (cursor_vec - drag_offset_screenspace) + image_offset;
+
+            matrix.scale(1. + zoom_factor);
+            image_transform.affine_matrix = matrix;
+
+            let mut zoom_target_postscale =
+                matrix.inverse() * (cursor_vec - drag_offset_screenspace) + image_offset;
+            drag_offset_screenspace =
+                drag_offset_screenspace + matrix * (zoom_target_postscale - zoom_target_prescale);
+            image_transform.screen_space_offset = drag_offset_screenspace;
+
             image_container.event_queue = None;
         } else if let Some(MouseEvent::Click(click_event)) = &image_container.event_queue {
             image_container.event_queue = None;
         }
 
-        let default_zoom: f64 = image_container.transform.get_zoom_factor();
-        let image_viewport = ImageWidget::get_return_size(image_size, container_size, default_zoom);
+        let image_origin_screenspace =
+            matrix * (image_origin_imagespace - image_offset) + drag_offset_screenspace;
+        let image_corner_screenspace =
+            matrix * (image_corner_imagespace - image_offset) + drag_offset_screenspace;
 
-        let mut drag_center = image_container.transform.get_drag_position();
-        if let Some(drag_position_delta_unwrapped) = drag_position_delta {
-            let drag_delta_image_space: Position = Position::new(
-                -ImageWidget::map_f64(
-                    drag_position_delta_unwrapped.x(),
-                    0.,
-                    container_size.width,
-                    0.,
-                    image_viewport.width,
-                ),
-                -ImageWidget::map_f64(
-                    drag_position_delta_unwrapped.y(),
-                    0.,
-                    container_size.height,
-                    0.,
-                    image_viewport.height,
-                ),
-            );
-            drag_center += drag_delta_image_space;
-            if save_drag_position {
-                image_container.transform.set_drag_position(drag_center);
-            }
-        }
+        let mut image_viewport = Rect::new(
+            image_origin_imagespace.x,
+            image_origin_imagespace.y,
+            image_corner_imagespace.x,
+            image_corner_imagespace.y,
+        );
 
-        let mut output_viewport: Rect =
-            Rect::new(0., 0., image_viewport.width, image_viewport.height);
-        let centering_offset =
-            Position::new(-image_viewport.width / 2., -image_viewport.height / 2.);
-        output_viewport = ImageWidget::translate_rect(output_viewport, centering_offset);
-        output_viewport = ImageWidget::translate_rect(output_viewport, drag_center);
-        if let Some(zoom_target_unwrapped) = zoom_target {
-            let click_position_image_space = Position::new(
-                ImageWidget::map_f64(
-                    zoom_target_unwrapped.x,
-                    0.,
-                    container_size.width,
-                    0.,
-                    image_viewport.width,
-                ) + (drag_center.x - image_viewport.width / 2.),
-                ImageWidget::map_f64(
-                    zoom_target_unwrapped.y,
-                    0.,
-                    container_size.height,
-                    0.,
-                    image_viewport.height,
-                ) + (drag_center.y - image_viewport.height / 2.),
-            );
-
-            let mut delta_zoom_factor: f64 = 1. + zoom_factor;
-            let zoom_factor = image_container.transform.get_zoom_factor() * delta_zoom_factor;
-            if zoom_factor > 100. {
-                delta_zoom_factor = 1.;
-            } else if zoom_factor < 0.5 {
-                delta_zoom_factor = 1.
-            } else {
-                image_container.transform.set_zoom_factor(zoom_factor);
-            }
-
-            let output_viewport_scaled = ImageWidget::scale_rect_at_position(
-                output_viewport,
-                delta_zoom_factor,
-                click_position_image_space,
-            );
-            let offset: Position = ImageWidget::get_rect_center(output_viewport_scaled)
-                - ImageWidget::get_rect_center(output_viewport);
-            image_container
-                .transform
-                .set_drag_position(drag_center + offset);
-
-            output_viewport = output_viewport_scaled;
-        }
-
-        let container_viewport;
-
-        if output_viewport.x0 < 0.
-            || output_viewport.y0 < 0.
-            || output_viewport.x1 > image_size.width
-            || output_viewport.y1 > image_size.height
-        {
-            container_viewport = Rect::new(
-                ImageWidget::map_f64(
-                    0.,
-                    output_viewport.x0,
-                    output_viewport.x1,
-                    0.,
-                    container_rect.width(),
-                ),
-                ImageWidget::map_f64(
-                    0.,
-                    output_viewport.y0,
-                    output_viewport.y1,
-                    0.,
-                    container_rect.height(),
-                ),
-                ImageWidget::map_f64(
-                    image_size.width,
-                    output_viewport.x0,
-                    output_viewport.x1,
-                    0.,
-                    container_rect.width(),
-                ),
-                ImageWidget::map_f64(
-                    image_size.height,
-                    output_viewport.y0,
-                    output_viewport.y1,
-                    0.,
-                    container_rect.height(),
-                ),
-            );
-        } else {
-            container_viewport = Rect::new(
-                0.,
-                0.,
-                container_rect.width() - 0.,
-                container_rect.height() - 0.,
-            );
-        }
-
-        println!("Image rect: {}", output_viewport);
+        let container_viewport = Rect::new(
+            image_origin_screenspace.x,
+            image_origin_screenspace.y,
+            image_corner_screenspace.x,
+            image_corner_screenspace.y,
+        );
+        image_container.transform = image_transform;
         ctx.draw_image_area(
-            image_container.get_cache(),
-            output_viewport,
+            &image_data,
+            image_viewport,
             container_viewport,
             InterpolationMode::NearestNeighbor,
         );
@@ -342,8 +203,29 @@ impl Widget<AppState> for ImageWidget {
 }
 
 fn generate_menu() -> Menu<AppState> {
-    Menu::empty().entry(
-        MenuItem::new(LocalizedString::new("Set as desktop bacground"))
-            .on_activate(|_ctx, data: &mut AppState, _env| data.set_as_wallpaper()),
-    )
+    Menu::empty()
+        .entry(MenuItem::new(LocalizedString::new("Open with...")))
+        .separator()
+        .entry(
+            MenuItem::new(LocalizedString::new("Set as desktop background"))
+                .on_activate(|_ctx, data: &mut AppState, _env| data.set_as_wallpaper()),
+        )
+        .separator()
+        .entry(MenuItem::new(LocalizedString::new("Open file location")))
+        .separator()
+        .entry(
+            MenuItem::new(LocalizedString::new("Rotate left")).on_activate(
+                |_ctx, data: &mut AppState, _env| data.rotate_in_memory(Direction::Left),
+            ),
+        )
+        .entry(
+            MenuItem::new(LocalizedString::new("Rotate right")).on_activate(
+                |_ctx, data: &mut AppState, _env| data.rotate_in_memory(Direction::Right),
+            ),
+        )
+        .separator()
+        .entry(MenuItem::new(LocalizedString::new("Copy")))
+        .entry(MenuItem::new(LocalizedString::new("Delete")))
+        .separator()
+        .entry(MenuItem::new(LocalizedString::new("Properties")))
 }

@@ -100,6 +100,7 @@ fn main() {
     // Build the UI structure
     let main_window = WindowDesc::new(build_ui())
         .title("")
+        .with_min_size((450., 240.))
         .window_size((640., 480.));
 
     //Set initial state

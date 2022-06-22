@@ -12,6 +12,7 @@ image = "0.24.2"
 druid = { git = "https://github.com/linebender/druid.git", features = ["im", "svg"] }
 dark-light = "0.2.2"
 wallpaper = "3.2.0"
+opener = "0.5.0"
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1"

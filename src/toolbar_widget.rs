@@ -1,18 +1,11 @@
-use crate::app_state::*;
 use crate::button_data::*;
 use crate::button_widget::*;
-use crate::image_container::*;
 use crate::toolbar_data::*;
-use druid::kurbo::BezPath;
-use druid::piet::{Brush, FontFamily, ImageFormat, InterpolationMode, Text, TextLayoutBuilder};
 use druid::widget::prelude::*;
 use druid::widget::Svg;
 use druid::widget::SvgData;
-use druid::{
-    Affine, AppLauncher, Color, FontDescriptor, LocalizedString, Point, Rect, TextLayout,
-    WindowDesc,
-};
-use druid::{Data, WidgetPod};
+use druid::{Color, Point, WidgetPod};
+
 use image::Rgb;
 use std::sync::Arc;
 
@@ -47,8 +40,9 @@ impl ToolbarWidget {
                 Err(_) => SvgData::default(),
             };
 
-
-        let fullscreen_mask_img = image::load_from_memory(include_bytes!("../resources/buttons/fullscreen_mask.bmp")).unwrap();
+        let fullscreen_mask_img =
+            image::load_from_memory(include_bytes!("../resources/buttons/fullscreen_mask.bmp"))
+                .unwrap();
         let fullscreen_mask_raw_pixels = fullscreen_mask_img.as_rgb8().unwrap();
         let mut fullscreen_mask = vec![false; 64 * 64];
         for i in 0..64 {
@@ -61,7 +55,8 @@ impl ToolbarWidget {
         }
         let fullscreen_mask_ref = Arc::new(fullscreen_mask);
 
-        let next_mask_img = image::load_from_memory(include_bytes!("../resources/buttons/next_mask.bmp")).unwrap();
+        let next_mask_img =
+            image::load_from_memory(include_bytes!("../resources/buttons/next_mask.bmp")).unwrap();
         let next_mask_raw_pixels = next_mask_img.as_rgb8().unwrap();
         let mut next_mask = vec![false; 68 * 32];
         for i in 0..32 {
@@ -74,7 +69,8 @@ impl ToolbarWidget {
         }
         let next_mask_ref = Arc::new(next_mask);
 
-        let prev_mask_img = image::load_from_memory(include_bytes!("../resources/buttons/prev_mask.bmp")).unwrap();
+        let prev_mask_img =
+            image::load_from_memory(include_bytes!("../resources/buttons/prev_mask.bmp")).unwrap();
         let prev_mask_raw_pixels = prev_mask_img.as_rgb8().unwrap();
         let mut prev_mask = vec![false; 68 * 32];
         for i in 0..32 {
@@ -87,7 +83,8 @@ impl ToolbarWidget {
         }
         let prev_mask_ref = Arc::new(prev_mask);
 
-        let small_mask_img = image::load_from_memory(include_bytes!("../resources/buttons/small_mask.bmp")).unwrap();
+        let small_mask_img =
+            image::load_from_memory(include_bytes!("../resources/buttons/small_mask.bmp")).unwrap();
         let small_mask_raw_pixels = small_mask_img.as_rgb8().unwrap();
         let mut small_mask = vec![false; 32 * 32];
         for i in 0..32 {

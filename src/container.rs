@@ -1,17 +1,8 @@
-use std::any::Any;
-use std::sync::Arc;
-
-use druid::kurbo::BezPath;
-use druid::piet::{Brush, FontFamily, ImageFormat, InterpolationMode, Text, TextLayoutBuilder};
 use druid::widget::prelude::*;
-use druid::{
-    Affine, AppLauncher, Color, FontDescriptor, KbKey, KeyEvent, LocalizedString, Point, Rect,
-    TextLayout, WindowDesc,
-};
-use druid::{Data, WidgetPod};
+use druid::WidgetPod;
+use druid::{Color, KbKey, Point};
 
 use crate::app_state::*;
-use crate::image_container::*;
 use crate::image_widget::*;
 use crate::toolbar_data::*;
 use crate::toolbar_widget::*;
@@ -34,30 +25,6 @@ impl ContainerWidget {
 
 impl Widget<AppState> for ContainerWidget {
     fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut AppState, _env: &Env) {
-        let resizing = match _event {
-            Event::WindowSize(_) => true,
-            _ => false,
-        };
-        if (_data.get_image_freshness() | (resizing && _data.image_centered))
-            && _ctx.size().width > 0.
-        {
-            _data.set_image_freshness(false);
-            let mut new_title = "Foxfire - ".to_string();
-            new_title.push_str(&*_data.get_image_name());
-            _ctx.window().set_title(&new_title);
-            let mut anchor = _data.get_image_ref();
-            let mut image_container = anchor.lock().unwrap();
-            let size = image_container.get_size();
-            let toolbar_height = _data.get_toolbar_height();
-            let image_aspect_ratio = size.width / size.height;
-
-            let scaled_toolbar_height =
-                ((size.height / (_ctx.size().height - toolbar_height)) * toolbar_height) / 2.;
-            image_container.center_image(_ctx.size(), toolbar_height, scaled_toolbar_height);
-            _data.image_centered = true;
-            _ctx.request_paint();
-        }
-
         if let Event::KeyDown(k) = _event {
             if k.key == KbKey::ArrowRight {
                 _data.load_next_image();
@@ -74,7 +41,7 @@ impl Widget<AppState> for ContainerWidget {
                 self.image_widget.event(_ctx, _event, _data, _env);
             } else {
                 _ctx.set_focus(self.toolbar.id());
-                let mut anchor = _data.get_toolbar_state();
+                let anchor = _data.get_toolbar_state();
                 let mut toolbar_state = anchor.lock().unwrap();
                 self.toolbar.event(_ctx, _event, &mut toolbar_state, _env);
             }
@@ -82,7 +49,7 @@ impl Widget<AppState> for ContainerWidget {
             self.image_widget.event(_ctx, _event, _data, _env);
         }
 
-        let mut anchor = _data.get_toolbar_state();
+        let anchor = _data.get_toolbar_state();
         let mut tb_state = anchor.lock().unwrap();
         if tb_state.get_right() {
             _data.load_next_image();
@@ -104,6 +71,27 @@ impl Widget<AppState> for ContainerWidget {
             tb_state.set_rotate_right(false);
             _ctx.request_paint();
         }
+
+        let resizing = match _event {
+            Event::WindowSize(_) => true,
+            _ => false,
+        };
+        if (_data.get_image_freshness() | (resizing && _data.image_centered))
+            && _ctx.size().width > 0.
+        {
+            _data.set_image_freshness(false);
+            let mut new_title = "Foxfire - ".to_string();
+            new_title.push_str(&*_data.get_image_name());
+            _ctx.window().set_title(&new_title);
+            let anchor = _data.get_image_ref();
+            let mut image_container = anchor.lock().unwrap();
+            let size = image_container.get_size();
+            let toolbar_height = _data.get_toolbar_height();
+
+            image_container.center_image(_ctx.size(), toolbar_height);
+            _data.image_centered = true;
+            _ctx.request_paint();
+        }
     }
 
     fn lifecycle(
@@ -113,37 +101,9 @@ impl Widget<AppState> for ContainerWidget {
         _data: &AppState,
         _env: &Env,
     ) {
-        // if let LifeCycle::WidgetAdded = _event {
-        //     let mut anchor = _data.get_image_ref();
-        //     let mut image_container = anchor.lock().unwrap();
-        //     let size = image_container.get_size();
-        //     let toolbar_height = _data.get_toolbar_height();
-        //     let image_aspect_ratio = size.width / size.height;
-        //     if (size.width < 800. && size.height < 800.)
-        //         && (size.width > 320. && size.height > 240.)
-        //     {
-        //         let window_size = Size::new(size.width, size.height + toolbar_height);
-        //         _ctx.window().set_size(window_size);
-        //     } else if image_aspect_ratio > 0.5 && image_aspect_ratio < 3. {
-        //         let match_aspect_ratio: Size =
-        //             Size::new(640., (640. / image_aspect_ratio) + toolbar_height);
-        //         _ctx.window().set_size(match_aspect_ratio);
-        //     }
-        //     let scaled_toolbar_height = ((size.height
-        //         / (_ctx.size().height - toolbar_height))
-        //         * toolbar_height)
-        //         / 2.;
-        //     println!("Displaying image scaled by {}%", scaled_toolbar_height);
-        //     image_container.center_image(
-        //         _ctx.size(),
-        //         toolbar_height,
-        //         scaled_toolbar_height,
-        //     );
-        // }
-
         self.image_widget.lifecycle(_ctx, _event, _data, _env);
 
-        let mut anchor = _data.get_toolbar_state();
+        let anchor = _data.get_toolbar_state();
         let toolbar_state = anchor.lock().unwrap();
         self.toolbar.lifecycle(_ctx, _event, &toolbar_state, _env);
     }
@@ -169,7 +129,7 @@ impl Widget<AppState> for ContainerWidget {
             Size::new(bc.max().width, toolbar_height),
         );
 
-        let mut anchor = _data.get_toolbar_state();
+        let anchor = _data.get_toolbar_state();
         let toolbar_state = anchor.lock().unwrap();
 
         self.toolbar
@@ -197,7 +157,7 @@ impl Widget<AppState> for ContainerWidget {
         ctx.fill(rect, &fill_color);
         self.image_widget.paint(ctx, data, env);
 
-        let mut anchor = data.get_toolbar_state();
+        let anchor = data.get_toolbar_state();
         let toolbar_state = anchor.lock().unwrap();
 
         self.toolbar.paint(ctx, &toolbar_state, env);

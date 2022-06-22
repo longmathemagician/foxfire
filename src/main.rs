@@ -1,13 +1,5 @@
-#![allow(unused_imports)]
-#![allow(dead_code)]
-#![allow(unused_variables)]
-#![allow(unused_mut)]
-#![allow(unused_must_use)]
-#![allow(unused_assignments)]
 #![windows_subsystem = "windows"]
-use dark_light::*;
 use druid::{AppLauncher, WindowDesc};
-use image::*;
 use std::env;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
@@ -19,26 +11,13 @@ use files::*;
 mod events;
 mod types;
 
-mod image_container;
-use image_container::*;
-
-mod image_widget;
-use image_widget::*;
-
-mod container;
-use container::*;
-
-mod toolbar_data;
-use toolbar_data::*;
-
-mod toolbar_widget;
-use toolbar_widget::*;
-
 mod button_data;
-use button_data::*;
-
 mod button_widget;
-use button_widget::*;
+mod container;
+mod image_container;
+mod image_widget;
+mod toolbar_data;
+mod toolbar_widget;
 
 mod app_state;
 use app_state::*;
@@ -52,7 +31,7 @@ fn main() {
 
     // Set the name of the file to load from the command line args, if they exist
     let mut image_receiver;
-    let mut file_name = String::new();
+    let file_name: String;
     let mut files: Vec<PathBuf> = Vec::new();
     let mut current_index: usize = 0;
     let current_name: String;

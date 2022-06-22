@@ -1,7 +1,5 @@
 use crate::button_data::*;
-use druid::widget::SvgData;
 use druid::Data;
-use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Data)]
 pub struct ToolbarState {

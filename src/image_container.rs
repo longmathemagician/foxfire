@@ -1,10 +1,8 @@
-use druid::piet::{Piet, PietImage};
-use druid::Vec2;
+use druid::piet::PietImage;
 use druid::widget::prelude::*;
 use image::DynamicImage;
 
 use crate::events::*;
-use crate::files::*;
 use crate::types::*;
 
 // #[derive(Clone, Data)]
@@ -56,12 +54,7 @@ impl ImageContainer {
         self.image_data = Some(new_image);
         self.image_cache = None;
     }
-    pub fn center_image(
-        &mut self,
-        container: Size,
-        unscaled_toolbar_offset: f64,
-        scaled_toolbar_offset: f64,
-    ) {
+    pub fn center_image(&mut self, container: Size, unscaled_toolbar_offset: f64) {
         if self.image_data.is_some() {
             self.transform = ImageTransformation::new();
             let image = self.image_size;
@@ -76,13 +69,17 @@ impl ImageContainer {
             if image_aspect_ratio > container_aspect_ratio {
                 // the image is wider than the container, so match the widths to fill
                 scale_factor = container.width / image.width;
-                centering_vector = Vec2D::from(0., (container.height - unscaled_toolbar_offset) / 2. - (image.height * scale_factor) / 2.);
+                centering_vector = Vec2D::from(
+                    0.,
+                    (container.height - unscaled_toolbar_offset) / 2.
+                        - (image.height * scale_factor) / 2.,
+                );
             } else {
                 // the image is wider than the container, so fit the heights
                 scale_factor = (container.height - unscaled_toolbar_offset) / image.height;
-                centering_vector = Vec2D::from(container.width / 2. - (image.width * scale_factor) / 2., 0.);
+                centering_vector =
+                    Vec2D::from(container.width / 2. - (image.width * scale_factor) / 2., 0.);
             }
-
 
             self.transform.set_screen_space_offset(centering_vector);
             self.transform.set_scale(scale_factor);

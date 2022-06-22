@@ -1,20 +1,11 @@
-use std::borrow::{Borrow, BorrowMut};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use druid::widget::Button;
-use druid::Color;
-use druid::{Data, WidgetPod};
-use image::DynamicImage;
-use image::*;
-use wallpaper;
+use druid::Data;
 
-use crate::container::*;
 use crate::files::*;
 use crate::image_container::*;
-use crate::image_widget::*;
 use crate::toolbar_data::*;
-use crate::toolbar_widget::*;
 use crate::types::Direction;
 
 #[derive(Clone, Data)]
@@ -37,7 +28,7 @@ impl AppState {
             image_centered: true,
             current_image_index: 0,
             current_image_name: String::new(),
-            image_recenter_required: true,
+            image_recenter_required: false,
             image_list: Arc::new(Vec::new()),
             image_loader: Arc::new(Mutex::new(AsyncImageLoader::new())),
             toolbar_state: Arc::new(Mutex::new(ToolbarState::new(dark_theme_enabled))),
@@ -58,7 +49,7 @@ impl AppState {
         let mut tmp = self.image_loader.lock().unwrap();
         // Receive the image from the thread
         if tmp.has_receiver() {
-            if let Some(mut received_image_handle) = tmp.take_image_receiver() {
+            if let Some(received_image_handle) = tmp.take_image_receiver() {
                 let potential_image = received_image_handle.recv();
                 if let Ok(new_image) = potential_image {
                     let mut current_image = self.current_image.lock().unwrap();
@@ -112,7 +103,7 @@ impl AppState {
                     .unwrap(),
             );
             image_receiver.load_image();
-            if let Some(mut received_image_handle) = image_receiver.take_image_receiver() {
+            if let Some(received_image_handle) = image_receiver.take_image_receiver() {
                 let potential_image = received_image_handle.recv();
                 if let Ok(new_image) = potential_image {
                     let mut current_image = self.current_image.lock().unwrap();
@@ -150,7 +141,7 @@ impl AppState {
                     .unwrap(),
             );
             image_receiver.load_image();
-            if let Some(mut received_image_handle) = image_receiver.take_image_receiver() {
+            if let Some(received_image_handle) = image_receiver.take_image_receiver() {
                 let potential_image = received_image_handle.recv();
                 if let Ok(new_image) = potential_image {
                     let mut current_image = self.current_image.lock().unwrap();
@@ -170,23 +161,34 @@ impl AppState {
         self.image_recenter_required = true;
     }
     pub fn set_as_wallpaper(&self) {
-        wallpaper::set_mode(wallpaper::Mode::Span);
+        wallpaper::set_mode(wallpaper::Mode::Span)
+            .expect("ERROR: Could not set wallpaper scaling mode.");
         wallpaper::set_from_path(
             &self.image_list[self.current_image_index]
                 .clone()
                 .to_str()
-                .unwrap()
-                .to_string(),
-        );
+                .unwrap(),
+        )
+        .expect("ERROR: Could not set image as wallpaper");
     }
     pub fn rotate_in_memory(&mut self, direction: Direction) {
         let mut image_container_mutex = self.current_image.lock().unwrap();
-        let mut current_image = image_container_mutex.get_image();
+        let current_image = image_container_mutex.get_image();
         let rotated_image = match direction {
             Direction::Left => current_image.rotate270(),
             Direction::Right => current_image.rotate90(),
         };
         image_container_mutex.set_image(rotated_image);
         self.image_recenter_required = true;
+    }
+    pub fn open_folder(&self) {
+        opener::open(
+            &self.image_list[self.current_image_index]
+                .clone()
+                .parent()
+                .unwrap()
+                .as_os_str(),
+        )
+        .expect("ERROR: Could not open image location.");
     }
 }

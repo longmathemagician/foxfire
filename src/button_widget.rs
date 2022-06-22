@@ -1,13 +1,8 @@
 use crate::button_data::*;
-use crate::toolbar_data::*;
-use druid::im::vector::Focus;
-use druid::piet::{ImageFormat, InterpolationMode, PietImage};
 use druid::widget::prelude::*;
 use druid::widget::{Svg, SvgData};
-use druid::{Color, Point};
-use druid::{Data, WidgetPod};
-use std::ops::Index;
-use std::sync::{Arc, Mutex};
+use druid::WidgetPod;
+use std::sync::Arc;
 
 // #[derive(Clone, Data)]
 pub struct ThemedButton {
@@ -32,7 +27,7 @@ impl ThemedButton {
             image: WidgetPod::new(Svg::new(image)),
             image_hot: WidgetPod::new(Svg::new(image_hot)),
             image_active: WidgetPod::new(Svg::new(image_active)),
-            mask: mask,
+            mask,
         }
     }
 }
@@ -63,11 +58,9 @@ impl Widget<ThemedButtonState> for ThemedButton {
                     self.is_hot = true;
                     _ctx.request_paint();
                 }
-            } else {
-                if self.is_hot {
-                    self.is_hot = false;
-                    _ctx.request_paint();
-                }
+            } else if self.is_hot {
+                self.is_hot = false;
+                _ctx.request_paint();
             }
         }
         if self.is_hot {
@@ -98,7 +91,7 @@ impl Widget<ThemedButtonState> for ThemedButton {
             self.image_hot.lifecycle(_ctx, _event, _data, _env);
             self.image_active.lifecycle(_ctx, _event, _data, _env);
         }
-        if let LifeCycle::FocusChanged(e) | LifeCycle::HotChanged(e) = _event {
+        if let LifeCycle::FocusChanged(_) | LifeCycle::HotChanged(_) = _event {
             if !_ctx.is_active() || !_ctx.is_hot() {
                 self.is_hot = false;
             }

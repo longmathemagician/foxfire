@@ -1,9 +1,8 @@
 use image::DynamicImage;
-use std::ops::{Deref, DerefMut};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
+use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
-use std::sync::{mpsc, Arc, Mutex};
-use std::{env, thread};
+use std::thread;
 
 pub struct AsyncImageLoader {
     path: String,

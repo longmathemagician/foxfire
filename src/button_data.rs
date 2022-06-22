@@ -1,7 +1,4 @@
-use druid::piet::PietImage;
-use druid::widget::SvgData;
 use druid::Data;
-use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Data)]
 pub struct ThemedButtonState {
@@ -21,14 +18,8 @@ impl ThemedButtonState {
     pub fn is_pressed(&self) -> bool {
         self.pressed
     }
-    pub fn is_hot(&self) -> bool {
-        self.hot
-    }
     pub fn set_pressed(&mut self, state: bool) {
         self.pressed = state;
-    }
-    pub fn set_hot(&mut self, state: bool) {
-        self.hot = state;
     }
     pub fn fire_event(&mut self) {
         self.event = true;

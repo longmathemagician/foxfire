@@ -2,69 +2,6 @@ use std::fmt;
 use std::ops::*;
 
 #[derive(Debug, Copy, Clone)]
-pub struct Position {
-    pub x: f64,
-    pub y: f64,
-}
-
-impl Position {
-    pub fn new(x: f64, y: f64) -> Self {
-        Position { x, y }
-    }
-    pub fn set(&mut self, x: f64, y: f64) {
-        self.x = x;
-        self.y = y;
-    }
-    pub fn x(&self) -> f64 {
-        self.x
-    }
-    pub fn y(&self) -> f64 {
-        self.y
-    }
-}
-
-impl fmt::Display for Position {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "({:.2}, {:.2})", self.x, self.y)
-    }
-}
-
-impl Add for Position {
-    type Output = Position;
-    fn add(self, rhs: Position) -> Position {
-        Position::new(self.x + rhs.x, self.y + rhs.y)
-    }
-}
-
-impl Sub for Position {
-    type Output = Position;
-    fn sub(self, rhs: Position) -> Self::Output {
-        Position::new(self.x - rhs.x, self.y - rhs.y)
-    }
-}
-
-impl Neg for Position {
-    type Output = Position;
-    fn neg(self) -> Self::Output {
-        Position::new(-self.x, -self.y)
-    }
-}
-
-impl AddAssign for Position {
-    fn add_assign(&mut self, other: Position) {
-        self.x += other.x;
-        self.y += other.y;
-    }
-}
-
-impl SubAssign for Position {
-    fn sub_assign(&mut self, rhs: Position) {
-        self.x -= rhs.x;
-        self.y -= rhs.y;
-    }
-}
-
-#[derive(Debug, Copy, Clone)]
 pub struct ImageTransformation {
     pub affine_matrix: Matrix2x2<f64>,
     pub image_space_offset: Vec2D<f64>,

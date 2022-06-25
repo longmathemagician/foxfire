@@ -71,7 +71,7 @@ fn main() {
         current_name = file_path.file_name().unwrap().to_str().unwrap().to_string();
     } else {
         let image_bytes = include_bytes!("../resources/bananirb.jpg");
-        let mut current_image = image::load_from_memory(image_bytes).unwrap();
+        let current_image = image::load_from_memory(image_bytes).unwrap();
         image_receiver = AsyncImageLoader::new_from_bytes(current_image);
         current_name = String::from("Bananna Birb.jpeg2000");
     }
@@ -90,8 +90,7 @@ fn main() {
     let mut initial_state = AppState::new(theme_state);
     initial_state.set_image_handler(Arc::new(Mutex::new(image_receiver)));
     initial_state.set_current_image();
-    initial_state
-        .set_current_image_name(current_name);
+    initial_state.set_current_image_name(current_name);
     initial_state.set_image_list(current_index, files);
 
     // Launch program

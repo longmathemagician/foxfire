@@ -85,7 +85,6 @@ impl Widget<AppState> for ContainerWidget {
             _ctx.window().set_title(&new_title);
             let anchor = _data.get_image_ref();
             let mut image_container = anchor.lock().unwrap();
-            let size = image_container.get_size();
             let toolbar_height = _data.get_toolbar_height();
 
             image_container.center_image(_ctx.size(), toolbar_height);

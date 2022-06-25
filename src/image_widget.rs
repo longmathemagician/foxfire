@@ -17,7 +17,7 @@ impl Widget<AppState> for ImageWidget {
         if let Event::Wheel(mouse_event) = _event {
             if image_container.event_queue.is_none() {
                 let mouse_position =
-                    Position::new(mouse_event.window_pos.x, mouse_event.window_pos.y);
+                    Vec2D::from(mouse_event.window_pos.x, mouse_event.window_pos.y);
                 image_container.event_queue = Some(MouseEvent::Zoom(ZoomEvent::new(
                     mouse_event.wheel_delta.y,
                     mouse_position,
@@ -27,7 +27,7 @@ impl Widget<AppState> for ImageWidget {
             _ctx.request_paint();
         } else if let Event::MouseDown(mouse_event) = _event {
             if image_container.event_queue.is_none() {
-                let mouse_pos = Position::new(mouse_event.window_pos.x, mouse_event.window_pos.y);
+                let mouse_pos = Vec2D::from(mouse_event.window_pos.x, mouse_event.window_pos.y);
                 if mouse_event.button.is_left() {
                     let new_drag_event = DragEvent::new(mouse_pos, false);
                     image_container.event_queue = Some(MouseEvent::Drag(new_drag_event));
@@ -42,7 +42,7 @@ impl Widget<AppState> for ImageWidget {
             if let Some(MouseEvent::Drag(drag_event)) = &mut image_container.event_queue {
                 if !drag_event.is_finished() {
                     let current_pos =
-                        Position::new(mouse_event.window_pos.x, mouse_event.window_pos.y);
+                        Vec2D::from(mouse_event.window_pos.x, mouse_event.window_pos.y);
                     drag_event.set_delta(current_pos);
                     _ctx.request_paint();
                 }

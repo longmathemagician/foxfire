@@ -2,61 +2,58 @@ use crate::types::*;
 
 #[derive(Debug)]
 pub struct ClickEvent {
-    position: Position,
+    position: Vec2D<f64>,
 }
 impl ClickEvent {
-    pub fn new(position: Position) -> Self {
+    pub fn new(position: Vec2D<f64>) -> Self {
         ClickEvent { position }
     }
-    pub fn get_position(&self) -> Position {
+    pub fn get_position(&self) -> Vec2D<f64> {
         self.position
     }
 }
 
 #[derive(Debug)]
 pub struct ZoomEvent {
-    delta: f64,         // The distance reported by the scroll event
-    position: Position, // The screen-space point of the scroll event
+    delta: f64,           // The distance reported by the scroll event
+    position: Vec2D<f64>, // The screen-space point of the scroll event
 }
 impl ZoomEvent {
-    pub fn new(delta: f64, position: Position) -> Self {
+    pub fn new(delta: f64, position: Vec2D<f64>) -> Self {
         ZoomEvent { delta, position }
     }
     pub fn get_magnitude(&self) -> f64 {
         self.delta
     }
-    pub fn get_position(&self) -> Position {
+    pub fn get_position(&self) -> Vec2D<f64> {
         self.position
     }
-    pub fn set_position(&mut self, position: Position) {
+    pub fn set_position(&mut self, position: Vec2D<f64>) {
         self.position = position
     }
 }
 #[derive(Debug)]
 pub struct DragEvent {
-    start_pos: Position,
-    delta_pos: Position,
+    start_pos: Vec2D<f64>,
+    delta_pos: Vec2D<f64>,
     finished: bool,
     is_new: bool,
 }
 impl DragEvent {
-    pub fn new(start_pos: Position, finished: bool) -> Self {
-        let delta_pos = Position::new(0., 0.);
+    pub fn new(start_pos: Vec2D<f64>, finished: bool) -> Self {
+        const ZERO_VECTOR: Vec2D<f64> = Vec2D { x: 0.0, y: 0.0 };
         DragEvent {
             start_pos,
-            delta_pos,
+            delta_pos: ZERO_VECTOR,
             finished,
             is_new: true,
         }
     }
-    pub fn get_delta(&self) -> Position {
+    pub fn get_delta(&self) -> Vec2D<f64> {
         self.delta_pos
     }
-    pub fn set_delta(&mut self, current_pos: Position) {
-        self.delta_pos.set(
-            current_pos.x() - self.start_pos.x(),
-            current_pos.y() - self.start_pos.y(),
-        );
+    pub fn set_delta(&mut self, current_pos: Vec2D<f64>) {
+        self.delta_pos = current_pos - self.start_pos;
     }
     pub fn is_finished(&self) -> bool {
         self.finished

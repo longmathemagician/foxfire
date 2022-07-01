@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use druid::Data;
+use druid::{Application, ClipboardFormat, Data};
+use image::ImageOutputFormat;
 
 use crate::files::*;
 use crate::image_container::*;
@@ -190,5 +191,20 @@ impl AppState {
                 .as_os_str(),
         )
         .expect("ERROR: Could not open image location.");
+    }
+    pub fn copy_image_to_clipboard(&self) {
+        let mut clipboard = Application::global().clipboard();
+        let image_container_mutex = self.current_image.lock().unwrap();
+        let current_image = image_container_mutex.get_image();
+
+        let mut clipboard_data_buffer = std::io::Cursor::new(Vec::new());
+        current_image
+            .write_to(&mut clipboard_data_buffer, ImageOutputFormat::Png)
+            .expect("Error encoding image file to in-memory buffer");
+        let clipboard_data = [ClipboardFormat::new(
+            "image/png",
+            clipboard_data_buffer.into_inner(),
+        )];
+        clipboard.put_formats(&clipboard_data);
     }
 }

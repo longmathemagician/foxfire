@@ -1,4 +1,3 @@
-use std::fmt;
 use std::ops::*;
 
 #[derive(Debug, Copy, Clone)]

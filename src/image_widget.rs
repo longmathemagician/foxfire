@@ -214,7 +214,7 @@ impl Widget<AppState> for ImageWidget {
             InterpolationMode::NearestNeighbor,
         );
 
-        ctx.finish();
+        ctx.finish().expect("Error rendering image");
 
         let mut toolbar_area_capture = ctx
             .capture_image_area(Rect::new(
@@ -256,7 +256,10 @@ fn generate_menu() -> Menu<AppState> {
             ),
         )
         .separator()
-        .entry(MenuItem::new(LocalizedString::new("Copy")).enabled(false))
+        .entry(
+            MenuItem::new(LocalizedString::new("Copy"))
+                .on_activate(|_ctx, data: &mut AppState, _env| data.copy_image_to_clipboard()),
+        )
         .entry(MenuItem::new(LocalizedString::new("Delete")).enabled(false))
         .separator()
         .entry(MenuItem::new(LocalizedString::new("Properties")).enabled(false))

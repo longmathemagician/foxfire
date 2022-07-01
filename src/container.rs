@@ -17,7 +17,7 @@ pub struct ContainerWidget {
 impl ContainerWidget {
     pub fn new() -> Self {
         Self {
-            image_widget: WidgetPod::new(ImageWidget {}),
+            image_widget: WidgetPod::new(ImageWidget { cache: None }),
             toolbar: WidgetPod::new(ToolbarWidget::new()),
         }
     }
@@ -155,6 +155,11 @@ impl Widget<AppState> for ContainerWidget {
         let fill_color = Color::rgba(0.0, 0.8, 0.25, 1.);
         ctx.fill(rect, &fill_color);
         self.image_widget.paint(ctx, data, env);
+        ctx.draw_image(
+            &self.image_widget.widget().cache.as_ref().unwrap(),
+            druid::Rect::new(0., size.height - 80., size.width, size.height),
+            druid::piet::InterpolationMode::Bilinear,
+        );
 
         let anchor = data.get_toolbar_state();
         let toolbar_state = anchor.lock().unwrap();

@@ -9,7 +9,7 @@ opt-level = 3
 
 [dependencies]
 image = "0.24.2"
-druid = { git = "https://github.com/linebender/druid.git", features = ["im", "svg"] }
+druid = { git = "https://github.com/longmathemagician/druid.git", features = ["im", "svg"] }
 dark-light = "0.2.2"
 wallpaper = "3.2.0"
 opener = "0.5.0"

@@ -1,4 +1,4 @@
-use druid::piet::{CairoImage, Image, ImageFormat, InterpolationMode};
+use druid::piet::{ImageFormat, InterpolationMode};
 use druid::widget::prelude::*;
 use druid::{Color, Cursor, LocalizedString, Menu, MenuItem, Rect};
 use image::EncodableLayout;
@@ -7,9 +7,7 @@ use crate::app_state::*;
 use crate::events::*;
 use crate::types::*;
 
-pub struct ImageWidget {
-    pub cache: Option<CairoImage>,
-}
+pub struct ImageWidget {}
 
 impl Widget<AppState> for ImageWidget {
     fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut AppState, _env: &Env) {
@@ -213,21 +211,6 @@ impl Widget<AppState> for ImageWidget {
             container_viewport,
             InterpolationMode::NearestNeighbor,
         );
-
-        ctx.finish().expect("Error rendering image");
-
-        let mut toolbar_area_capture = ctx
-            .capture_image_area(Rect::new(
-                0.,
-                container_size.height - 80.,
-                container_size.width,
-                container_size.height,
-            ))
-            .unwrap();
-
-        toolbar_area_capture.blur(2, 3, 4);
-
-        self.cache = Some(toolbar_area_capture);
     }
 }
 

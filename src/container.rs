@@ -1,6 +1,7 @@
+use druid::piet::Image;
 use druid::widget::prelude::*;
 use druid::WidgetPod;
-use druid::{Color, KbKey, Point};
+use druid::{KbKey, Point};
 
 use crate::app_state::*;
 use crate::image_widget::*;
@@ -17,7 +18,7 @@ pub struct ContainerWidget {
 impl ContainerWidget {
     pub fn new() -> Self {
         Self {
-            image_widget: WidgetPod::new(ImageWidget { cache: None }),
+            image_widget: WidgetPod::new(ImageWidget {}),
             toolbar: WidgetPod::new(ToolbarWidget::new()),
         }
     }
@@ -148,16 +149,28 @@ impl Widget<AppState> for ContainerWidget {
         }
     }
 
-    // It goes event -> update -> layout -> paint, and each method can influence the next.
     fn paint(&mut self, ctx: &mut PaintCtx, data: &AppState, env: &Env) {
-        let size = ctx.size();
-        let rect = size.to_rect();
-        let fill_color = Color::rgba(0.0, 0.8, 0.25, 1.);
-        ctx.fill(rect, &fill_color);
         self.image_widget.paint(ctx, data, env);
+
+        ctx.finish()
+            .expect("Error finalizing rendering of image widget");
+
+        let container_size = ctx.size();
+        let toolbar_blur_region_rect = druid::Rect::new(
+            0.,
+            container_size.height - data.get_toolbar_height(),
+            container_size.width,
+            container_size.height,
+        )
+        .expand();
+
+        let mut toolbar_area_capture = ctx.capture_image_area(toolbar_blur_region_rect).unwrap();
+
+        toolbar_area_capture.blur(2, 3, 4);
+
         ctx.draw_image(
-            &self.image_widget.widget().cache.as_ref().unwrap(),
-            druid::Rect::new(0., size.height - 80., size.width, size.height),
+            &toolbar_area_capture,
+            toolbar_blur_region_rect,
             druid::piet::InterpolationMode::Bilinear,
         );
 

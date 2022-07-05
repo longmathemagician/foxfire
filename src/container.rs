@@ -152,9 +152,6 @@ impl Widget<AppState> for ContainerWidget {
     fn paint(&mut self, ctx: &mut PaintCtx, data: &AppState, env: &Env) {
         self.image_widget.paint(ctx, data, env);
 
-        ctx.finish()
-            .expect("Error finalizing rendering of image widget");
-
         let container_size = ctx.size();
         let toolbar_blur_region_rect = druid::Rect::new(
             0.,
@@ -164,15 +161,7 @@ impl Widget<AppState> for ContainerWidget {
         )
         .expand();
 
-        let mut toolbar_area_capture = ctx.capture_image_area(toolbar_blur_region_rect).unwrap();
-
-        toolbar_area_capture.blur(2, 3, 4);
-
-        ctx.draw_image(
-            &toolbar_area_capture,
-            toolbar_blur_region_rect,
-            druid::piet::InterpolationMode::Bilinear,
-        );
+        ctx.blur_region(toolbar_blur_region_rect, 2, 3, 4);
 
         let anchor = data.get_toolbar_state();
         let toolbar_state = anchor.lock().unwrap();

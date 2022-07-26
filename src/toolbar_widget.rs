@@ -465,29 +465,38 @@ impl Widget<ToolbarState> for ToolbarWidget {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, data: &ToolbarState, env: &Env) {
-        let size = ctx.size();
-        let rect = size.to_rect();
+        let container_size = ctx.size();
+        let container_rect = container_size.to_rect();
 
         if data.dark_theme_enabled {
             let fill_color = Color::rgba(0.2, 0.2, 0.2, 0.5);
-            ctx.fill(rect, &fill_color);
+            ctx.fill(container_rect, &fill_color);
             self.controls_outline_dark.paint(ctx, &false, env);
         } else {
             let fill_color = Color::rgba(1., 1., 1., 0.5);
-            ctx.fill(rect, &fill_color);
+            ctx.fill(container_rect, &fill_color);
             self.controls_outline.paint(ctx, &false, env);
         };
 
-        self.fullscreen_button
-            .paint(ctx, &data.fullscreen_button, env);
-        self.next_button.paint(ctx, &data.next_button, env);
-        self.prev_button.paint(ctx, &data.prev_button, env);
-        self.rotate_right_button
-            .paint(ctx, &data.rotate_right_button, env);
-        self.rotate_left_button
-            .paint(ctx, &data.rotate_left_button, env);
-        self.delete_button.paint(ctx, &data.delete_button, env);
-        self.recenter_button.paint(ctx, &data.recenter_button, env);
-        self.zoom_button.paint(ctx, &data.zoom_button, env);
+        let paint_region = ctx
+            .region()
+            .rects()
+            .last()
+            .expect("Tried to paint with an invalid clip region")
+            .clone();
+
+        ctx.with_child_ctx(paint_region, move |g| {
+            self.fullscreen_button
+                .paint(g, &data.fullscreen_button, env);
+            self.next_button.paint(g, &data.next_button, env);
+            self.prev_button.paint(g, &data.prev_button, env);
+            self.rotate_right_button
+                .paint(g, &data.rotate_right_button, env);
+            self.rotate_left_button
+                .paint(g, &data.rotate_left_button, env);
+            self.delete_button.paint(g, &data.delete_button, env);
+            self.recenter_button.paint(g, &data.recenter_button, env);
+            self.zoom_button.paint(g, &data.zoom_button, env);
+        });
     }
 }

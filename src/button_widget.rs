@@ -124,12 +124,22 @@ impl Widget<ThemedButtonState> for ThemedButton {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, data: &ThemedButtonState, env: &Env) {
-        if data.is_pressed() && self.is_hot {
-            self.image_active.paint(ctx, data, env);
-        } else if ctx.is_hot() && self.is_hot {
-            self.image_hot.paint(ctx, data, env);
-        } else {
-            self.image.paint(ctx, data, env);
-        }
+        let is_button_hot = self.is_hot;
+        let is_context_hot = ctx.is_hot();
+        let paint_region = ctx
+            .region()
+            .rects()
+            .last()
+            .expect("Tried to paint with an invalid clip region")
+            .clone();
+        ctx.with_child_ctx(paint_region, move |f| {
+            if data.is_pressed() && is_button_hot {
+                self.image_active.paint(f, data, env);
+            } else if is_context_hot && is_button_hot {
+                self.image_hot.paint(f, data, env);
+            } else {
+                self.image.paint(f, data, env);
+            }
+        });
     }
 }

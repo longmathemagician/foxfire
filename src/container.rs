@@ -1,7 +1,10 @@
-use druid::piet::Image;
+use druid::piet::{Image, InterpolationMode, PietImage};
+use druid::platform_menus::win::file::new;
 use druid::widget::prelude::*;
-use druid::WidgetPod;
-use druid::{KbKey, Point};
+use druid::{Color, KbKey, Point, Region};
+use druid::{Rect, WidgetPod};
+use std::borrow::BorrowMut;
+use std::mem;
 
 use crate::app_state::*;
 use crate::image_widget::*;
@@ -13,6 +16,7 @@ use crate::types::Direction;
 pub struct ContainerWidget {
     image_widget: WidgetPod<AppState, ImageWidget>,
     toolbar: WidgetPod<ToolbarState, ToolbarWidget>,
+    blur_cache: Option<PietImage>,
 }
 
 impl ContainerWidget {
@@ -20,6 +24,7 @@ impl ContainerWidget {
         Self {
             image_widget: WidgetPod::new(ImageWidget {}),
             toolbar: WidgetPod::new(ToolbarWidget::new()),
+            blur_cache: None,
         }
     }
 }
@@ -150,22 +155,76 @@ impl Widget<AppState> for ContainerWidget {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, data: &AppState, env: &Env) {
-        self.image_widget.paint(ctx, data, env);
-
         let container_size = ctx.size();
+        let clip_size = ctx
+            .region()
+            .rects()
+            .last()
+            .expect("Tried to paint with an invalid region")
+            .size();
+
+        let is_full_paint = if clip_size.width.ceil() != container_size.width.ceil()
+            || clip_size.height.ceil() != container_size.height.ceil()
+        {
+            false
+        } else {
+            true
+        };
+
+        let container_object_offset = 0.01; // todo: figure out exactly why this is needed and fix that
         let toolbar_blur_region_rect = druid::Rect::new(
             0.,
-            container_size.height - data.get_toolbar_height(),
+            container_size.height - data.get_toolbar_height() + container_object_offset,
             container_size.width,
-            container_size.height,
-        )
-        .expand();
+            container_size.height - container_object_offset,
+        );
 
-        ctx.blur_region(toolbar_blur_region_rect, 2, 3, 4);
+        let test = druid::Rect::new(
+            0.,
+            0.,
+            toolbar_blur_region_rect.width(),
+            toolbar_blur_region_rect.height(),
+        );
 
         let anchor = data.get_toolbar_state();
         let toolbar_state = anchor.lock().unwrap();
+        let paint_region = ctx
+            .region()
+            .rects()
+            .last()
+            .expect("Tried to paint with an invalid clip region")
+            .clone();
 
-        self.toolbar.paint(ctx, &toolbar_state, env);
+        self.image_widget.paint(ctx, data, env);
+
+        if is_full_paint {
+            let mut img = ctx
+                .capture_image_area(toolbar_blur_region_rect)
+                .expect("Failed to capture image");
+
+            let mut blurred_img = ctx.blur_image(&img, 30.).expect("Failed to blur image");
+
+            ctx.draw_image(
+                &blurred_img,
+                toolbar_blur_region_rect,
+                InterpolationMode::Bilinear,
+            );
+
+            self.blur_cache = Some(blurred_img)
+        } else {
+            if let Some(cached_image) = &self.blur_cache {
+                ctx.draw_image(
+                    cached_image,
+                    toolbar_blur_region_rect,
+                    InterpolationMode::Bilinear,
+                );
+            }
+        }
+
+        ctx.with_child_ctx(paint_region, move |h| {
+            h.with_child_ctx(paint_region, move |i| {
+                self.toolbar.paint(i, &toolbar_state, env);
+            });
+        });
     }
 }

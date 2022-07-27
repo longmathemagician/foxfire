@@ -9,6 +9,7 @@ mod files;
 use files::*;
 
 mod events;
+use events::*;
 mod types;
 
 mod button_data;
@@ -95,6 +96,7 @@ fn main() {
 
     // Launch program
     AppLauncher::with_window(main_window)
+        .delegate(Delegate::new())
         .log_to_console()
         .launch(initial_state)
         .expect("Error: error.");

@@ -156,69 +156,58 @@ impl Widget<AppState> for ContainerWidget {
 
     fn paint(&mut self, ctx: &mut PaintCtx, data: &AppState, env: &Env) {
         let container_size = ctx.size();
-        let clip_size = ctx
-            .region()
-            .rects()
-            .last()
-            .expect("Tried to paint with an invalid region")
-            .size();
 
-        let is_full_paint = if clip_size.width.ceil() != container_size.width.ceil()
-            || clip_size.height.ceil() != container_size.height.ceil()
-        {
-            false
+        let final_region = ctx.region().rects().last();
+
+        let is_full_paint = if let Some(clip_rect) = final_region {
+            if clip_rect.width().ceil() == container_size.width.ceil()
+                && clip_rect.height().ceil() == container_size.height.ceil()
+            {
+                true // Context has a full size clip region
+            } else {
+                false // Context's clip region is smaller than the context
+            }
         } else {
-            true
+            true // Context lacks a clip region
         };
 
-        let container_object_offset = 0.01; // todo: figure out exactly why this is needed and fix that
+        let container_alignment_offset = 0.01;
         let toolbar_blur_region_rect = druid::Rect::new(
             0.,
-            container_size.height - data.get_toolbar_height() + container_object_offset,
+            container_size.height - data.get_toolbar_height() + container_alignment_offset,
             container_size.width,
-            container_size.height - container_object_offset,
-        );
-
-        let test = druid::Rect::new(
-            0.,
-            0.,
-            toolbar_blur_region_rect.width(),
-            toolbar_blur_region_rect.height(),
+            container_size.height - container_alignment_offset,
         );
 
         let anchor = data.get_toolbar_state();
         let toolbar_state = anchor.lock().unwrap();
-        let paint_region = ctx
-            .region()
-            .rects()
-            .last()
-            .expect("Tried to paint with an invalid clip region")
-            .clone();
+        let paint_region = match final_region {
+            Some(rect) => *rect,
+            _ => container_size.to_rect(),
+        };
 
         self.image_widget.paint(ctx, data, env);
 
         if is_full_paint {
-            let mut img = ctx
-                .capture_image_area(toolbar_blur_region_rect)
-                .expect("Failed to capture image");
+            let capture_result = ctx.capture_image_area(toolbar_blur_region_rect);
+            if let Ok(captured_image) = capture_result {
+                let blur_result = ctx.blur_image(&captured_image, 30.);
+                if let Ok(blurred_image) = blur_result {
+                    ctx.draw_image(
+                        &blurred_image,
+                        toolbar_blur_region_rect,
+                        InterpolationMode::Bilinear,
+                    );
 
-            let mut blurred_img = ctx.blur_image(&img, 30.).expect("Failed to blur image");
-
+                    self.blur_cache = Some(blurred_image)
+                }
+            }
+        } else if let Some(cached_image) = &self.blur_cache {
             ctx.draw_image(
-                &blurred_img,
+                cached_image,
                 toolbar_blur_region_rect,
                 InterpolationMode::Bilinear,
             );
-
-            self.blur_cache = Some(blurred_img)
-        } else {
-            if let Some(cached_image) = &self.blur_cache {
-                ctx.draw_image(
-                    cached_image,
-                    toolbar_blur_region_rect,
-                    InterpolationMode::Bilinear,
-                );
-            }
         }
 
         ctx.with_child_ctx(paint_region, move |h| {

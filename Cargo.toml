@@ -16,3 +16,9 @@ opener = "0.5.0"
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1"
+
+[patch."https://github.com/longmathemagician/piet.git"]
+piet-common = { path = "../piet/piet-common" }
+
+[patch."https://github.com/longmathemagician/druid.git"]
+druid = { path = "../druid/druid" }

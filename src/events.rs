@@ -1,11 +1,16 @@
-use druid::{AppDelegate, Command, DelegateCtx, Env, Handled, Target};
-use crate::AppState;
+
+
 use crate::types::*;
+
+
+
+
 
 #[derive(Debug)]
 pub struct ClickEvent {
     position: Vec2D<f64>,
 }
+
 impl ClickEvent {
     pub fn new(position: Vec2D<f64>) -> Self {
         ClickEvent { position }
@@ -75,25 +80,4 @@ pub enum MouseEvent {
     Zoom(ZoomEvent),
     Drag(DragEvent),
     Click(ClickEvent),
-}
-
-pub struct Delegate;
-
-impl Delegate {
-    pub fn new() -> Self {
-        Self
-    }
-}
-
-impl AppDelegate<AppState> for Delegate {
-    fn command(
-        &mut self,
-        _ctx: &mut DelegateCtx,
-        _target: Target,
-        cmd: &Command,
-        data: &mut AppState,
-        _env: &Env,
-    ) -> Handled {
-        Handled::Yes
-    }
 }

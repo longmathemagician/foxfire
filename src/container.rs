@@ -1,29 +1,49 @@
+use druid::keyboard_types::Key::Character;
 use druid::piet::{Image, InterpolationMode, PietImage};
-use druid::platform_menus::win::file::new;
+
 use druid::widget::prelude::*;
-use druid::{Color, KbKey, Point, Region};
-use druid::{Rect, WidgetPod};
-use std::borrow::BorrowMut;
-use std::mem;
+use druid::widget::{Button, Click, ControllerHost, Svg, SvgData};
+use druid::{KbKey, Point, Target, WidgetExt};
+use druid::{Modifiers, Size};
+use druid::{WidgetPod};
+
 
 use crate::app_state::*;
 use crate::image_widget::*;
 use crate::toolbar_data::*;
 use crate::toolbar_widget::*;
-use crate::types::Direction;
+
+use crate::{LOAD_NEW_IMAGE, NEXT_IMAGE, PREV_IMAGE};
 
 // #[derive(Clone, Data)]
 pub struct ContainerWidget {
     image_widget: WidgetPod<AppState, ImageWidget>,
     toolbar: WidgetPod<ToolbarState, ToolbarWidget>,
+    spinner: WidgetPod<AppState, Svg>,
+    spinner_size: Size,
+    load_image_button: WidgetPod<AppState, ControllerHost<Button<AppState>, Click<AppState>>>,
     blur_cache: Option<PietImage>,
 }
 
 impl ContainerWidget {
     pub fn new() -> Self {
+        let spinner_svg_data = match include_str!("../resources/spinner.svg").parse::<SvgData>() {
+            Ok(svg) => svg,
+            Err(_) => SvgData::default(),
+        };
+        let spinner_size = spinner_svg_data.size();
+
+
+        let button_data = String::from("Load image");
+        let button = Button::new(button_data).on_click(
+            |_ctx, data: &mut AppState, _env| data.show_file_load_dialog());
+
         Self {
-            image_widget: WidgetPod::new(ImageWidget {}),
+            image_widget: WidgetPod::new(ImageWidget::new()),
             toolbar: WidgetPod::new(ToolbarWidget::new()),
+            spinner: WidgetPod::new(Svg::new(spinner_svg_data)),
+            spinner_size,
+            load_image_button: WidgetPod::new(button),
             blur_cache: None,
         }
     }
@@ -31,70 +51,61 @@ impl ContainerWidget {
 
 impl Widget<AppState> for ContainerWidget {
     fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut AppState, _env: &Env) {
+        let needs_paint: bool = false;
+        let anchor = _data.get_toolbar_state();
+        let mut toolbar_state = anchor.lock().unwrap();
+
+        let event_sink = _ctx.get_external_handle();
+
         if let Event::KeyDown(k) = _event {
+            // Key events are always handled here in the container
             if k.key == KbKey::ArrowRight {
-                _data.load_next_image();
+                event_sink
+                    .submit_command(NEXT_IMAGE, true, Target::Auto)
+                    .expect("Failed to send load next image command");
             } else if k.key == KbKey::ArrowLeft {
-                _data.load_prev_image();
+                event_sink
+                    .submit_command(PREV_IMAGE, true, Target::Auto)
+                    .expect("Failed to send load previous image command");
+            } else if k.key == Character(String::from('o')) && k.mods == Modifiers::CONTROL {
+                event_sink
+                    .submit_command(LOAD_NEW_IMAGE, true, Target::Auto)
+                    .expect("Failed to send load new image command");
             }
         } else if let Event::MouseDown(e)
         | Event::MouseUp(e)
         | Event::MouseMove(e)
         | Event::Wheel(e) = _event
         {
+            if !_data.has_image() {
+                self.load_image_button.event(_ctx, _event, _data, _env);
+            }
+
+            // Mouse events will be handled by either the toolbar or the image widget
             if e.window_pos.y < _ctx.size().height - _data.get_toolbar_height() {
                 _ctx.set_focus(self.image_widget.id());
                 self.image_widget.event(_ctx, _event, _data, _env);
+                _data.set_image_center_state(false);
             } else {
                 _ctx.set_focus(self.toolbar.id());
-                let anchor = _data.get_toolbar_state();
-                let mut toolbar_state = anchor.lock().unwrap();
                 self.toolbar.event(_ctx, _event, &mut toolbar_state, _env);
             }
-        } else {
+        } else if let Event::Zoom(_e) = _event {
+            _ctx.set_focus(self.image_widget.id());
             self.image_widget.event(_ctx, _event, _data, _env);
+            _data.set_image_center_state(false);
+        } else if let Event::Internal(_e) = _event {
+            self.image_widget.event(_ctx, _event, _data, _env);
+            self.toolbar.event(_ctx, _event, &mut toolbar_state, _env);
+        } else if let Event::WindowConnected = _event {
+            _data.set_window_readiness(true);
+        } else if let Event::WindowSize(_e) = _event {} else {
+            self.image_widget.event(_ctx, _event, _data, _env);
+            self.toolbar.event(_ctx, _event, &mut toolbar_state, _env);
         }
 
-        let anchor = _data.get_toolbar_state();
-        let mut tb_state = anchor.lock().unwrap();
-        if tb_state.get_right() {
-            _data.load_next_image();
-            tb_state.set_right(false);
-        } else if tb_state.get_left() {
-            _data.load_prev_image();
-            tb_state.set_left(false);
-        } else if tb_state.get_recenter() {
-            _data.image_centered = true;
-            _data.recenter_on_next_paint();
-            tb_state.set_recenter(false);
-            _ctx.request_paint();
-        } else if tb_state.get_rotate_left() {
-            _data.rotate_in_memory(Direction::Left);
-            tb_state.set_rotate_left(false);
-            _ctx.request_paint();
-        } else if tb_state.get_rotate_right() {
-            _data.rotate_in_memory(Direction::Right);
-            tb_state.set_rotate_right(false);
-            _ctx.request_paint();
-        }
 
-        let resizing = match _event {
-            Event::WindowSize(_) => true,
-            _ => false,
-        };
-        if (_data.get_image_freshness() | (resizing && _data.image_centered))
-            && _ctx.size().width > 0.
-        {
-            _data.set_image_freshness(false);
-            let mut new_title = "Foxfire - ".to_string();
-            new_title.push_str(&*_data.get_image_name());
-            _ctx.window().set_title(&new_title);
-            let anchor = _data.get_image_ref();
-            let mut image_container = anchor.lock().unwrap();
-            let toolbar_height = _data.get_toolbar_height();
-
-            image_container.center_image(_ctx.size(), toolbar_height);
-            _data.image_centered = true;
+        if needs_paint == true {
             _ctx.request_paint();
         }
     }
@@ -111,9 +122,26 @@ impl Widget<AppState> for ContainerWidget {
         let anchor = _data.get_toolbar_state();
         let toolbar_state = anchor.lock().unwrap();
         self.toolbar.lifecycle(_ctx, _event, &toolbar_state, _env);
+
+        self.spinner.lifecycle(_ctx, _event, _data, _env);
+
+        self.load_image_button.lifecycle(_ctx, _event, &_data, _env);
     }
 
     fn update(&mut self, _ctx: &mut UpdateCtx, _old_data: &AppState, _data: &AppState, _env: &Env) {
+        let mut needs_paint = true; // repaint on all updates, for now
+
+        if _data.get_image_center_state() && !_old_data.get_image_center_state() {
+            self.image_widget
+                .widget_mut()
+                .update(_ctx, _old_data, _data, _env);
+            needs_paint = true;
+        }
+
+        if needs_paint == true {
+            _ctx.children_changed();
+            _ctx.request_paint();
+        }
     }
 
     fn layout(
@@ -145,6 +173,22 @@ impl Widget<AppState> for ContainerWidget {
             _env,
             Point::new(0.0, bc.max().height - toolbar_height),
         );
+
+        self.spinner.layout(_layout_ctx, &bc.loosen(), _data, _env);
+        let spinner_origin = Point::new(
+            bc.max().width / 2.0 - self.spinner_size.width / 2.0,
+            (bc.max().height - toolbar_height) / 2.0 - self.spinner_size.height / 2.0,
+        );
+        self.spinner
+            .set_origin(_layout_ctx, _data, _env, spinner_origin);
+
+        self.load_image_button.layout(_layout_ctx, &bc.loosen(), &_data, _env);
+        let load_image_button_origin = Point::new(
+            bc.max().width / 2.0 - self.spinner_size.width / 2.0,
+            (bc.max().height - toolbar_height) / 2.0 - self.spinner_size.height / 2.0,
+        );
+        self.load_image_button
+            .set_origin(_layout_ctx, &_data, _env, spinner_origin);
 
         if bc.is_width_bounded() && bc.is_height_bounded() {
             bc.max()
@@ -187,6 +231,12 @@ impl Widget<AppState> for ContainerWidget {
         };
 
         self.image_widget.paint(ctx, data, env);
+
+        if data.get_loading_state() {
+            self.spinner.paint(ctx, data, env);
+        } else if !data.has_image() {
+            self.load_image_button.paint(ctx, &data, env);
+        }
 
         if is_full_paint {
             let capture_result = ctx.capture_image_area(toolbar_blur_region_rect);

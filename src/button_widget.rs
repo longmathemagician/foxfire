@@ -1,11 +1,12 @@
 use crate::button_data::*;
 use druid::widget::prelude::*;
 use druid::widget::{Svg, SvgData};
-use druid::WidgetPod;
+use druid::{MouseButton, Selector, Target, WidgetPod};
 use std::sync::Arc;
 
 // #[derive(Clone, Data)]
 pub struct ThemedButton {
+    command: Selector<bool>,
     is_hot: bool,
     size: Size,
     image: WidgetPod<ThemedButtonState, Svg>,
@@ -15,6 +16,7 @@ pub struct ThemedButton {
 }
 impl ThemedButton {
     pub fn new(
+        command: Selector<bool>,
         size: Size,
         image: SvgData,
         image_hot: SvgData,
@@ -22,6 +24,7 @@ impl ThemedButton {
         mask: Arc<Vec<bool>>,
     ) -> Self {
         Self {
+            command,
             is_hot: false,
             size,
             image: WidgetPod::new(Svg::new(image)),
@@ -64,12 +67,17 @@ impl Widget<ThemedButtonState> for ThemedButton {
             }
         }
         if self.is_hot {
-            if let Event::MouseDown(_) = _event {
-                _data.set_pressed(true);
-                _ctx.request_paint();
-            } else if let Event::MouseUp(_) = _event {
-                if _data.is_pressed() {
-                    _data.fire_event();
+            if let Event::MouseDown(m) = _event {
+                if m.button == MouseButton::Left {
+                    _data.set_pressed(true);
+                    _ctx.request_paint();
+                }
+            } else if let Event::MouseUp(m) = _event {
+                if m.button == MouseButton::Left && _data.is_pressed() {
+                    let event_sink = _ctx.get_external_handle();
+                    event_sink
+                        .submit_command(self.command, true, Target::Auto)
+                        .expect("Failed to send command");
                     _data.set_pressed(false);
                     _ctx.request_paint();
                 }

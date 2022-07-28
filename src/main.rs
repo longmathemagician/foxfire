@@ -1,21 +1,23 @@
 #![windows_subsystem = "windows"]
 use druid::{AppLauncher, WindowDesc};
 use std::env;
-use std::ffi::OsStr;
-use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
 
 mod files;
+
 use files::*;
 
 mod events;
-use events::*;
+
 mod types;
+
+mod commands;
+
+use commands::*;
 
 mod button_data;
 mod button_widget;
 mod container;
-mod image_container;
+mod display_image_container;
 mod image_widget;
 mod toolbar_data;
 mod toolbar_widget;
@@ -30,74 +32,30 @@ fn main() {
     // Get command line arguments
     let args: Vec<String> = env::args().collect();
 
-    // Set the name of the file to load from the command line args, if they exist
-    let mut image_receiver;
-    let file_name: String;
-    let mut files: Vec<PathBuf> = Vec::new();
-    let mut current_index: usize = 0;
-    let current_name: String;
-    if args.len() > 1 {
-        file_name = args[1].clone();
-        image_receiver = AsyncImageLoader::new_from_string(&file_name);
-        // Load the image in the background while we set up the UI
-        image_receiver.load_image();
-        // Make list of other files in current directory
-        let file_path = Path::new(&file_name).canonicalize().unwrap();
-        let current_folder = file_path.parent().unwrap();
-
-        for entry in current_folder
-            .read_dir()
-            .expect("read_dir call failed")
-            .flatten()
-        {
-            // TODO: Case insensitivity
-            if (entry.path().extension() == Some(OsStr::new("jpg")))
-                | (entry.path().extension() == Some(OsStr::new("jpeg")))
-                | (entry.path().extension() == Some(OsStr::new("JPG")))
-                | (entry.path().extension() == Some(OsStr::new("JPEG")))
-                | (entry.path().extension() == Some(OsStr::new("png")))
-                | (entry.path().extension() == Some(OsStr::new("PNG")))
-            {
-                files.push(entry.path());
-            }
-        }
-
-        // Find & save index of the initial file
-        for (index, entry) in files.iter().enumerate() {
-            if entry.file_name() == file_path.file_name() {
-                current_index = index;
-                break;
-            }
-        }
-        current_name = file_path.file_name().unwrap().to_str().unwrap().to_string();
+    let file_name: String = if args.len() > 1 {
+        args[1].clone()
     } else {
-        let image_bytes = include_bytes!("../resources/bananirb.jpg");
-        let current_image = image::load_from_memory(image_bytes).unwrap();
-        image_receiver = AsyncImageLoader::new_from_bytes(current_image);
-        current_name = String::from("Bananna Birb.jpeg2000");
-    }
+        String::new()
+    };
 
     // Build the UI structure
     let main_window = WindowDesc::new(build_ui())
         .title("")
         .with_min_size((450., 240.))
         .window_size((640., 480.));
+    let launcher = AppLauncher::with_window(main_window).log_to_console();
 
     //Set initial state
     let theme_state = match dark_light::detect() {
         dark_light::Mode::Dark => true,
         dark_light::Mode::Light => false,
     };
-    let mut initial_state = AppState::new(theme_state);
-    initial_state.set_image_handler(Arc::new(Mutex::new(image_receiver)));
-    initial_state.set_current_image();
-    initial_state.set_current_image_name(current_name);
-    initial_state.set_image_list(current_index, files);
+    let mut initial_state = AppState::from(theme_state, launcher.get_external_handle());
+    initial_state.startup(file_name);
 
     // Launch program
-    AppLauncher::with_window(main_window)
+    launcher
         .delegate(Delegate::new())
-        .log_to_console()
         .launch(initial_state)
-        .expect("Error: error.");
+        .expect("Failed to launch application");
 }

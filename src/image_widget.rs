@@ -3,11 +3,64 @@ use druid::widget::prelude::*;
 use druid::{Color, Cursor, LocalizedString, Menu, MenuItem, Rect};
 use image::EncodableLayout;
 
+
 use crate::app_state::*;
 use crate::events::*;
 use crate::types::*;
 
-pub struct ImageWidget {}
+pub struct ImageWidget {
+    center: bool,
+    transform: Option<ImageTransformation>,
+}
+
+impl ImageWidget {
+    pub fn new() -> Self {
+        Self {
+            center: true,
+            transform: None,
+        }
+    }
+
+    pub fn get_centered_state(&self) -> bool {
+        self.center
+    }
+    pub fn set_centered_state(&mut self, state: bool) {
+        self.center = state;
+    }
+
+    pub fn clear_transform(&mut self) {
+        self.transform = None;
+    }
+
+    pub fn center_image(&mut self, image: Size, container: Size, unscaled_toolbar_offset: f64) {
+        let mut image_transformation = ImageTransformation::new();
+        let image_aspect_ratio = image.width / image.height;
+        let container_aspect_ratio = container.width / (container.height - unscaled_toolbar_offset);
+
+        let scale_factor: f64;
+        let centering_vector: Vec2D<f64>;
+
+        if image_aspect_ratio > container_aspect_ratio {
+            // the image is wider than the container, so match the widths to fill
+            scale_factor = container.width / image.width;
+            centering_vector = Vec2D::from(
+                0.,
+                (container.height - unscaled_toolbar_offset) / 2.
+                    - (image.height * scale_factor) / 2.,
+            );
+        } else {
+            // the image is wider than the container, so fit the heights
+            scale_factor = (container.height - unscaled_toolbar_offset) / image.height;
+            centering_vector =
+                Vec2D::from(container.width / 2. - (image.width * scale_factor) / 2., 0.);
+        }
+
+        image_transformation.set_screen_space_offset(centering_vector);
+        image_transformation.set_scale(scale_factor);
+
+        self.transform = Some(image_transformation);
+    }
+}
 
 impl Widget<AppState> for ImageWidget {
     fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut AppState, _env: &Env) {
@@ -21,7 +74,7 @@ impl Widget<AppState> for ImageWidget {
                     mouse_event.wheel_delta.y,
                     mouse_position,
                 )));
-                _data.image_centered = false;
+                self.set_centered_state(false);
             }
             _ctx.request_paint();
         } else if let Event::MouseDown(mouse_event) = _event {
@@ -31,7 +84,7 @@ impl Widget<AppState> for ImageWidget {
                     let new_drag_event = DragEvent::new(mouse_pos, false);
                     image_container.event_queue = Some(MouseEvent::Drag(new_drag_event));
                     // _ctx.set_cursor(&Cursor::Crosshair);
-                    _data.image_centered = false;
+                    self.set_centered_state(false);
                 } else if mouse_event.button.is_right() {
                     _ctx.show_context_menu(generate_menu(), mouse_event.pos)
                 }
@@ -53,6 +106,7 @@ impl Widget<AppState> for ImageWidget {
                 }
                 _ctx.request_paint();
             }
+        } else if let Event::WindowSize(_) = _event {
         }
     }
 
@@ -64,11 +118,8 @@ impl Widget<AppState> for ImageWidget {
         _env: &Env,
     ) {
         if let LifeCycle::WidgetAdded = _event {
-            let mut new_title = "Foxfire - ".to_string();
-            new_title.push_str(&*_data.get_image_name());
-            _ctx.window().set_title(&new_title);
             let anchor = _data.get_image_ref();
-            let mut image_container = anchor.lock().unwrap();
+            let image_container = anchor.lock().unwrap();
             let size = image_container.get_size();
             let toolbar_height = _data.get_toolbar_height();
             let image_aspect_ratio = size.width / size.height;
@@ -82,8 +133,6 @@ impl Widget<AppState> for ImageWidget {
                     Size::new(640., (640. / image_aspect_ratio) + toolbar_height);
                 _ctx.window().set_size(match_aspect_ratio);
             }
-
-            image_container.center_image(_ctx.window().get_size(), toolbar_height);
         } else if let LifeCycle::FocusChanged(false) | LifeCycle::HotChanged(false) = _event {
             let anchor = _data.get_image_ref();
             let mut image_container = anchor.lock().unwrap();
@@ -96,6 +145,11 @@ impl Widget<AppState> for ImageWidget {
     }
 
     fn update(&mut self, _ctx: &mut UpdateCtx, _old_data: &AppState, _data: &AppState, _env: &Env) {
+        if _data.get_image_center_state() {
+            self.set_centered_state(true);
+            self.clear_transform();
+        }
+
         let anchor = _data.get_image_ref();
         let mut image_container = anchor.lock().unwrap();
         if image_container.event_queue.is_some() {
@@ -117,6 +171,18 @@ impl Widget<AppState> for ImageWidget {
         _data: &AppState,
         _env: &Env,
     ) -> Size {
+        if self.get_centered_state() {
+            let anchor = _data.get_image_ref();
+            let image_container = anchor.lock().unwrap();
+            if image_container.get_image().is_some() {
+                let image_size = image_container.get_size();
+                let container_size = bc.max();
+                let toolbar_height = _data.get_toolbar_height();
+
+                self.center_image(image_size, container_size, toolbar_height);
+            }
+        }
+
         if bc.is_width_bounded() && bc.is_height_bounded() {
             bc.max()
         } else {
@@ -138,8 +204,12 @@ impl Widget<AppState> for ImageWidget {
         let anchor = data.get_image_ref();
         let mut image_container = anchor.lock().unwrap();
         let image_size = image_container.get_size();
+
         if !image_container.has_cache() {
-            let image_rgba = image_container.get_image().clone().into_rgba8();
+            let image_rgba = match image_container.get_image() {
+                Some(image) => image.clone().into_rgba8(),
+                None => return,
+            };
             let image_result = ctx.make_image(
                 image_size.width as usize,
                 image_size.height as usize,
@@ -149,7 +219,12 @@ impl Widget<AppState> for ImageWidget {
             image_container.set_cache(image_result.unwrap());
         }
 
-        let mut image_transform = image_container.transform;
+        if self.transform.is_none() {
+            self.center_image(image_size, container_size, data.get_toolbar_height());
+        }
+        let mut image_transform = self
+            .transform
+            .expect("Image transformation retrieval failed");
 
         const IMAGE_ORIGIN_NAMESPACE: Vec2D<f64> = Vec2D { x: 0.0, y: 0.0 };
         let image_corner_imagespace =
@@ -204,7 +279,7 @@ impl Widget<AppState> for ImageWidget {
             image_corner_screenspace.x,
             image_corner_screenspace.y,
         );
-        image_container.transform = image_transform;
+        self.transform = Some(image_transform);
         ctx.draw_image_area(
             image_container.get_cache(),
             image_viewport,

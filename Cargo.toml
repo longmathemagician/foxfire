@@ -7,6 +7,13 @@ build = "build.rs"
 [profile.dev]
 opt-level = 3
 
+[profile.release]
+strip = true
+#opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+
 [dependencies]
 image = "0.24.2"
 druid = { git = "https://github.com/longmathemagician/druid.git", features = ["im", "svg"] }
@@ -16,6 +23,9 @@ opener = "0.5.0"
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1"
+
+[target.'cfg(windows)'.dependencies]
+winapi = "0.3"
 
 [patch."https://github.com/longmathemagician/piet.git"]
 piet-common = { path = "../piet/piet-common" }

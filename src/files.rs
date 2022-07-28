@@ -1,3 +1,4 @@
+
 use image::DynamicImage;
 use std::path::PathBuf;
 use std::sync::mpsc;
@@ -11,25 +12,11 @@ pub struct AsyncImageLoader {
 }
 
 impl AsyncImageLoader {
-    pub fn new() -> Self {
-        Self {
-            path: String::new(),
-            image_receiver: None,
-            image: None,
-        }
-    }
-    pub fn new_from_string(new_path: &str) -> Self {
+    pub fn from_str(new_path: &str) -> Self {
         Self {
             path: new_path.to_string(),
             image_receiver: None,
             image: None,
-        }
-    }
-    pub fn new_from_bytes(image: DynamicImage) -> Self {
-        Self {
-            path: String::new(),
-            image_receiver: None,
-            image: Some(image),
         }
     }
     pub fn load_image(&mut self) {
@@ -47,16 +34,16 @@ impl AsyncImageLoader {
             };
         });
     }
-    pub fn take_image_receiver(&mut self) -> Option<Receiver<DynamicImage>> {
-        self.image_receiver.take()
-    }
-    pub fn has_receiver(&self) -> bool {
-        matches!(&self.image_receiver, Some(_))
-    }
-    pub fn has_image(&self) -> bool {
-        matches!(&self.image, Some(_))
-    }
-    pub fn take_image(&mut self) -> Option<DynamicImage> {
-        self.image.take()
+}
+
+// #[derive(Clone, Data)]
+pub struct NewImageContainer {
+    pub path: String,
+    pub image: DynamicImage,
+}
+
+impl NewImageContainer {
+    pub fn from_string_and_dynamicimage(path: String, image: DynamicImage) -> Self {
+        Self { path, image }
     }
 }

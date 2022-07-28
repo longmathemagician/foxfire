@@ -6,6 +6,10 @@ use druid::widget::Svg;
 use druid::widget::SvgData;
 use druid::{Color, Point, WidgetPod};
 
+use crate::{
+    DELETE_IMAGE, FULLSCREEN_VIEW, NEXT_IMAGE, PREV_IMAGE, RECENTER_IMAGE, ROTATE_LEFT,
+    ROTATE_RIGHT, ZOOM_IMAGE,
+};
 use image::Rgb;
 use std::sync::Arc;
 
@@ -204,6 +208,7 @@ impl ToolbarWidget {
             };
         Self {
             fullscreen_button: WidgetPod::new(ThemedButton::new(
+                FULLSCREEN_VIEW,
                 Size::new(64., 64.),
                 fullscreen,
                 fullscreen_hot,
@@ -211,6 +216,7 @@ impl ToolbarWidget {
                 Arc::clone(&fullscreen_mask_ref),
             )),
             next_button: WidgetPod::new(ThemedButton::new(
+                NEXT_IMAGE,
                 Size::new(68., 32.),
                 next,
                 next_hot,
@@ -218,6 +224,7 @@ impl ToolbarWidget {
                 Arc::clone(&next_mask_ref),
             )),
             prev_button: WidgetPod::new(ThemedButton::new(
+                PREV_IMAGE,
                 Size::new(68., 32.),
                 prev,
                 prev_hot,
@@ -225,6 +232,7 @@ impl ToolbarWidget {
                 Arc::clone(&prev_mask_ref),
             )),
             rotate_right_button: WidgetPod::new(ThemedButton::new(
+                ROTATE_RIGHT,
                 Size::new(32., 32.),
                 rot_r,
                 rot_r_hot,
@@ -232,6 +240,7 @@ impl ToolbarWidget {
                 Arc::clone(&small_mask_ref),
             )),
             rotate_left_button: WidgetPod::new(ThemedButton::new(
+                ROTATE_LEFT,
                 Size::new(32., 32.),
                 rot_l,
                 rot_l_hot,
@@ -239,6 +248,7 @@ impl ToolbarWidget {
                 Arc::clone(&small_mask_ref),
             )),
             delete_button: WidgetPod::new(ThemedButton::new(
+                DELETE_IMAGE,
                 Size::new(32., 32.),
                 del,
                 del_hot,
@@ -246,6 +256,7 @@ impl ToolbarWidget {
                 Arc::clone(&small_mask_ref),
             )),
             recenter_button: WidgetPod::new(ThemedButton::new(
+                RECENTER_IMAGE,
                 Size::new(32., 32.),
                 recenter,
                 recenter_hot,
@@ -253,6 +264,7 @@ impl ToolbarWidget {
                 Arc::clone(&small_mask_ref),
             )),
             zoom_button: WidgetPod::new(ThemedButton::new(
+                ZOOM_IMAGE,
                 Size::new(32., 32.),
                 zoom,
                 zoom_hot,

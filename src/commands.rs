@@ -1,7 +1,7 @@
 use crate::{platform_api_calls, AppState, NewImageContainer};
 use druid::{
     AppDelegate, Command, DelegateCtx, Env, Handled, Selector, SingleUse, Target, WindowHandle,
-    WindowId,
+    WindowId, Application,
 };
 use druid::commands::OPEN_FILE;
 
@@ -84,5 +84,9 @@ impl AppDelegate<AppState> for Delegate {
     ) {
         platform_api_calls(id);
         _data.set_window_id(id);
+    }
+
+    fn window_removed(&mut self, id: WindowId, data: &mut AppState, env: &Env, ctx: &mut DelegateCtx) {
+        Application::global().quit()
     }
 }

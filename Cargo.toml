@@ -28,7 +28,7 @@ winres = "0.1"
 winapi = "0.3"
 
 [patch."https://github.com/longmathemagician/piet.git"]
-piet-common = { path = "../piet/piet-common" }
+piet-common = { path = "dependencies/piet/piet-common" }
 
 [patch."https://github.com/longmathemagician/druid.git"]
-druid = { path = "../druid/druid" }
+druid = { path = "dependencies/druid/druid" }

@@ -1,0 +1,6 @@
+[submodule "dependencies/druid"]
+	path = dependencies/druid
+	url = https://github.com/longmathemagician/druid
+[submodule "dependencies/piet"]
+	path = dependencies/piet
+	url = https://github.com/longmathemagician/piet

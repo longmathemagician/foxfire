@@ -76,9 +76,15 @@ impl AppState {
     pub fn startup(&mut self, path: String) {
         let file_path_result = Path::new(&path).canonicalize();
         if let Ok(file_path) = file_path_result {
-            self.set_loading_state(true);
-            self.load_image(&file_path);
-            self.parse_folder(&file_path);
+            if file_path.is_file() {
+                self.set_loading_state(true);
+                self.load_image(&file_path);
+                self.parse_folder(&file_path);
+            } else if file_path.is_dir() {
+                self.parse_folder(&file_path);
+                let first_image = self.image_list[0].clone();
+                self.load_image(&first_image);
+            }
         } else {
             self.set_loading_state(false);
         }
@@ -89,6 +95,7 @@ impl AppState {
 
         let mut files: Vec<PathBuf> = Vec::new();
         let mut current_index: usize = 0;
+        let current_file_name = path_anchor.file_name();
         let current_folder = path_anchor.parent().unwrap();
 
         for entry in current_folder
@@ -109,15 +116,19 @@ impl AppState {
         }
 
         // Find & save index of the initial file
-        for (index, entry) in files.iter().enumerate() {
-            if entry.file_name() == current_folder.file_name() {
-                current_index = index;
-                break;
+        if let Some(file_name) = current_file_name {
+            for (index, entry) in files.iter().enumerate() {
+                if let Some(entry_file_name) = entry.file_name() {
+                    if entry_file_name == file_name {
+                        current_index = index;
+                        break;
+                    }
+                }
             }
         }
 
-        self.current_image_index = current_index;
-        self.image_list = Arc::new(files);
+        // Set the image index and file list
+        self.set_image_list(current_index, files);
     }
 
     fn load_image(&mut self, image_path: &PathBuf) {
@@ -298,7 +309,17 @@ impl AppState {
                 .button_text("Load");
 
             let event_sink = self.druid_event_sink.lock().unwrap();
-            event_sink.submit_command(SHOW_OPEN_PANEL, options, window_id);
+            event_sink.submit_command(SHOW_OPEN_PANEL, options, window_id).expect("Failed to send command");
         }
+    }
+
+    pub fn close_current_image(&mut self) {
+        self.set_image_list(0, Vec::new());
+        let mut current_image = self.current_image.lock().unwrap();
+        self.current_image_name = String::new();
+        current_image.clear_image();
+        self.image_recenter_required = false;
+        self.has_image = false;
+
     }
 }

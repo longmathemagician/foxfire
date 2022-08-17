@@ -3,8 +3,9 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use druid::{Data, ExtEventSink, FileDialogOptions, FileSpec, SingleUse, Target, WindowId};
+use druid::{Application, ClipboardFormat, Data, ExtEventSink, FileDialogOptions, FileSpec, SingleUse, Target, WindowId};
 use druid::commands::SHOW_OPEN_PANEL;
+use image::ImageOutputFormat;
 
 
 use crate::display_image_container::*;
@@ -228,26 +229,34 @@ impl AppState {
     }
 
     pub fn set_as_wallpaper(&self) {
-        wallpaper::set_mode(wallpaper::Mode::Span)
-            .expect("Could not set wallpaper scaling mode.");
-        wallpaper::set_from_path(
+        let mode_set_result = wallpaper::set_mode(wallpaper::Mode::Span);
+        if mode_set_result.is_err() {
+            println!("Could not set wallpaper mode");
+        }
+
+        let wallpaper_set_result = wallpaper::set_from_path(
             &self.image_list[self.current_image_index]
                 .clone()
                 .to_str()
                 .unwrap(),
-        )
-            .expect("Could not set image as wallpaper");
+        );
+        if wallpaper_set_result.is_err() {
+            println!("Could not set wallpaper")
+        }
     }
 
-    pub fn rotate_in_memory(&mut self, _direction: Direction) {
-        // let mut image_container_mutex = self.current_image.lock().unwrap();
-        // let current_image = image_container_mutex.get_image();
-        // let rotated_image = match direction {
-        //     Direction::Left => current_image.rotate270(),
-        //     Direction::Right => current_image.rotate90(),
-        // };
-        // image_container_mutex.set_image(rotated_image);
-        // self.image_recenter_required = true;
+    pub fn rotate_in_memory(&mut self, direction: Direction) {
+        let mut image_container_mutex = self.current_image.lock().unwrap();
+        let current_image_option = image_container_mutex.get_image();
+
+        if let Some(image) = current_image_option {
+            let rotated_image = match direction {
+                Direction::Left => image.rotate270(),
+                Direction::Right => image.rotate90(),
+            };
+            image_container_mutex.set_image(rotated_image);
+            self.image_recenter_required = true;
+        }
     }
 
     pub fn open_folder(&self) {
@@ -262,19 +271,21 @@ impl AppState {
     }
 
     pub fn copy_image_to_clipboard(&self) {
-        // let mut clipboard = Application::global().clipboard();
-        // let image_container_mutex = self.current_image.lock().unwrap();
-        // let current_image = image_container_mutex.get_image();
+        let mut clipboard = Application::global().clipboard();
+        let image_container_mutex = self.current_image.lock().unwrap();
+        let current_image_option = image_container_mutex.get_image();
 
-        // let mut clipboard_data_buffer = std::io::Cursor::new(Vec::new());
-        // current_image
-        //     .write_to(&mut clipboard_data_buffer, ImageOutputFormat::Png)
-        //     .expect("Error encoding image file to in-memory buffer");
-        // let clipboard_data = [ClipboardFormat::new(
-        //     "image/png",
-        //     clipboard_data_buffer.into_inner(),
-        // )];
-        // clipboard.put_formats(&clipboard_data);
+        if let Some(image) = current_image_option {
+            let mut clipboard_data_buffer = std::io::Cursor::new(Vec::new());
+            image
+                .write_to(&mut clipboard_data_buffer, ImageOutputFormat::Png)
+                .expect("Error encoding image file to in-memory buffer");
+            let clipboard_data = [ClipboardFormat::new(
+                "image/png",
+                clipboard_data_buffer.into_inner(),
+            )];
+            clipboard.put_formats(&clipboard_data);
+        }
     }
 
     pub fn get_loading_state(&self) -> bool {

@@ -4,6 +4,7 @@ use druid::{
     WindowId, Application,
 };
 use druid::commands::OPEN_FILE;
+use crate::types::Direction;
 
 pub const IMAGE_LOADING_STATE: Selector<bool> = Selector::new("image_loading_state");
 pub const IMAGE_LOADED: Selector<SingleUse<NewImageContainer>> = Selector::new("image_loaded");
@@ -58,6 +59,16 @@ impl AppDelegate<AppState> for Delegate {
             data.set_image_center_state(true);
             Handled::Yes
         } else if let Some(true) = cmd.get(ZOOM_IMAGE) {
+            Handled::Yes
+        }
+        else if let Some(true) = cmd.get(ROTATE_LEFT) {
+            data.set_loading_state(true);
+            data.rotate_in_memory(Direction::Left);
+            data.set_loading_state(false);
+            Handled::Yes
+        }
+        else if let Some(true) = cmd.get(ROTATE_RIGHT) {
+            data.rotate_in_memory(Direction::Right);
             Handled::Yes
         } else if let Some(true) = cmd.get(LOAD_NEW_IMAGE) {
             data.show_file_load_dialog();

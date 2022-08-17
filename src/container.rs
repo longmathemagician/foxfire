@@ -6,6 +6,8 @@ use druid::widget::{Button, Click, ControllerHost, Svg, SvgData};
 use druid::{KbKey, Point, Target, WidgetExt};
 use druid::{Modifiers, Size};
 use druid::{WidgetPod};
+use druid::piet::cairo::glib::OptionArg::Int;
+use druid::Value::Rect;
 
 
 use crate::app_state::*;
@@ -188,7 +190,7 @@ impl Widget<AppState> for ContainerWidget {
             (bc.max().height - toolbar_height) / 2.0 - self.spinner_size.height / 2.0,
         );
         self.load_image_button
-            .set_origin(_layout_ctx, &_data, _env, spinner_origin);
+            .set_origin(_layout_ctx, &_data, _env, load_image_button_origin);
 
         if bc.is_width_bounded() && bc.is_height_bounded() {
             bc.max()
@@ -215,7 +217,7 @@ impl Widget<AppState> for ContainerWidget {
             true // Context lacks a clip region
         };
 
-        let container_alignment_offset = 0.01;
+        let container_alignment_offset = if cfg!(windows) {0.01} else {0.0};
         let toolbar_blur_region_rect = druid::Rect::new(
             0.,
             container_size.height - data.get_toolbar_height() + container_alignment_offset,
@@ -237,6 +239,22 @@ impl Widget<AppState> for ContainerWidget {
         } else if !data.has_image() {
             self.load_image_button.paint(ctx, &data, env);
         }
+
+        // let osd_size = Size::new(64.0, 64.0);
+        // let osd_rect = druid::Rect::new(
+        //     container_size.width/2. - osd_size.width/2.,
+        //     container_size.height/2. - osd_size.height/2.,
+        //     container_size.width/2. + osd_size.width/2.,
+        //     container_size.height/2. + osd_size.height/2.
+        // );
+        // let osd_blur_capture = ctx.capture_image_area(osd_rect);
+        // if let Ok(osd_background_image) = osd_blur_capture {
+        //     let osd_blurred_background_result = ctx.blur_image(&osd_background_image, 30.);
+        //     if let Ok(osd_blurred_background) = osd_blurred_background_result {
+        //         ctx.draw_image(&osd_blurred_background, osd_rect, InterpolationMode::Bilinear);
+        //     }
+        //
+        // }
 
         if is_full_paint {
             let capture_result = ctx.capture_image_area(toolbar_blur_region_rect);

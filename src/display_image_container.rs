@@ -52,4 +52,11 @@ impl DisplayImageContainer {
         self.image_data = Some(new_image);
         self.image_cache = None;
     }
+
+    pub fn clear_image(&mut self) {
+        self.image_data = None;
+        self.image_size = Size::new(0.0, 0.0);
+        self.image_cache = None;
+        self.event_queue = None;
+    }
 }

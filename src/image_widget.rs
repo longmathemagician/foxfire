@@ -291,7 +291,11 @@ impl Widget<AppState> for ImageWidget {
 
 fn generate_menu() -> Menu<AppState> {
     Menu::empty()
-        .entry(MenuItem::new(LocalizedString::new("Open with...")).enabled(false))
+        .entry(
+            MenuItem::new(LocalizedString::new("Open new image"))
+                .on_activate(|_ctx, data: &mut AppState, _env| data.show_file_load_dialog()),
+        )
+        .entry(MenuItem::new(LocalizedString::new("Open current image with...")).enabled(false))
         .separator()
         .entry(
             MenuItem::new(LocalizedString::new("Set as desktop background"))

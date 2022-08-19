@@ -3,12 +3,10 @@ use druid::piet::{Image, InterpolationMode, PietImage};
 
 use druid::widget::prelude::*;
 use druid::widget::{Button, Click, ControllerHost, Svg, SvgData};
+use druid::Value::Rect;
+use druid::WidgetPod;
 use druid::{KbKey, Point, Target, WidgetExt};
 use druid::{Modifiers, Size};
-use druid::{WidgetPod};
-use druid::piet::cairo::glib::OptionArg::Int;
-use druid::Value::Rect;
-
 
 use crate::app_state::*;
 use crate::image_widget::*;
@@ -35,10 +33,9 @@ impl ContainerWidget {
         };
         let spinner_size = spinner_svg_data.size();
 
-
         let button_data = String::from("Load image");
-        let button = Button::new(button_data).on_click(
-            |_ctx, data: &mut AppState, _env| data.show_file_load_dialog());
+        let button = Button::new(button_data)
+            .on_click(|_ctx, data: &mut AppState, _env| data.show_file_load_dialog());
 
         Self {
             image_widget: WidgetPod::new(ImageWidget::new()),
@@ -101,11 +98,11 @@ impl Widget<AppState> for ContainerWidget {
             self.toolbar.event(_ctx, _event, &mut toolbar_state, _env);
         } else if let Event::WindowConnected = _event {
             _data.set_window_readiness(true);
-        } else if let Event::WindowSize(_e) = _event {} else {
+        } else if let Event::WindowSize(_e) = _event {
+        } else {
             self.image_widget.event(_ctx, _event, _data, _env);
             self.toolbar.event(_ctx, _event, &mut toolbar_state, _env);
         }
-
 
         if needs_paint == true {
             _ctx.request_paint();
@@ -184,7 +181,8 @@ impl Widget<AppState> for ContainerWidget {
         self.spinner
             .set_origin(_layout_ctx, _data, _env, spinner_origin);
 
-        self.load_image_button.layout(_layout_ctx, &bc.loosen(), &_data, _env);
+        self.load_image_button
+            .layout(_layout_ctx, &bc.loosen(), &_data, _env);
         let load_image_button_origin = Point::new(
             bc.max().width / 2.0 - self.spinner_size.width / 2.0,
             (bc.max().height - toolbar_height) / 2.0 - self.spinner_size.height / 2.0,
@@ -217,7 +215,7 @@ impl Widget<AppState> for ContainerWidget {
             true // Context lacks a clip region
         };
 
-        let container_alignment_offset = if cfg!(windows) {0.01} else {0.0};
+        let container_alignment_offset = if cfg!(windows) { 0.01 } else { 0.0 };
         let toolbar_blur_region_rect = druid::Rect::new(
             0.,
             container_size.height - data.get_toolbar_height() + container_alignment_offset,

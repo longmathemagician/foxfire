@@ -1,10 +1,10 @@
-use crate::{platform_api_calls, AppState, NewImageContainer};
-use druid::{
-    AppDelegate, Command, DelegateCtx, Env, Handled, Selector, SingleUse, Target, WindowHandle,
-    WindowId, Application,
-};
-use druid::commands::OPEN_FILE;
 use crate::types::Direction;
+use crate::{platform_api_calls, AppState, NewImageContainer};
+use druid::commands::OPEN_FILE;
+use druid::{
+    AppDelegate, Application, Command, DelegateCtx, Env, Handled, Selector, SingleUse, Target,
+    WindowHandle, WindowId,
+};
 
 pub const IMAGE_LOADING_STATE: Selector<bool> = Selector::new("image_loading_state");
 pub const IMAGE_LOADED: Selector<SingleUse<NewImageContainer>> = Selector::new("image_loaded");
@@ -60,14 +60,12 @@ impl AppDelegate<AppState> for Delegate {
             Handled::Yes
         } else if let Some(true) = cmd.get(ZOOM_IMAGE) {
             Handled::Yes
-        }
-        else if let Some(true) = cmd.get(ROTATE_LEFT) {
+        } else if let Some(true) = cmd.get(ROTATE_LEFT) {
             data.set_loading_state(true);
             data.rotate_in_memory(Direction::Left);
             data.set_loading_state(false);
             Handled::Yes
-        }
-        else if let Some(true) = cmd.get(ROTATE_RIGHT) {
+        } else if let Some(true) = cmd.get(ROTATE_RIGHT) {
             data.rotate_in_memory(Direction::Right);
             Handled::Yes
         } else if let Some(true) = cmd.get(LOAD_NEW_IMAGE) {
@@ -77,7 +75,9 @@ impl AppDelegate<AppState> for Delegate {
             let file_path = file_info.path.to_str();
             if let Some(path_string) = file_path {
                 data.startup(path_string.to_string());
-            } else { println!("Failed to parse image path") }
+            } else {
+                println!("Failed to parse image path")
+            }
 
             Handled::Yes
         } else {
@@ -97,7 +97,13 @@ impl AppDelegate<AppState> for Delegate {
         _data.set_window_id(id);
     }
 
-    fn window_removed(&mut self, id: WindowId, data: &mut AppState, env: &Env, ctx: &mut DelegateCtx) {
+    fn window_removed(
+        &mut self,
+        id: WindowId,
+        data: &mut AppState,
+        env: &Env,
+        ctx: &mut DelegateCtx,
+    ) {
         Application::global().quit()
     }
 }

@@ -21,7 +21,7 @@ mod win_api_calls {
     use winapi::{
         shared::minwindef::{LPARAM, LPCVOID, WPARAM},
         shared::ntdef::HRESULT,
-        shared::windef::{HWND},
+        shared::windef::HWND,
         um::winuser::{LoadIconW, SendMessageW, ICON_BIG, ICON_SMALL, WM_SETICON},
     };
 

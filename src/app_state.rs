@@ -3,10 +3,12 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use druid::{Application, ClipboardFormat, Data, ExtEventSink, FileDialogOptions, FileSpec, SingleUse, Target, WindowId};
 use druid::commands::SHOW_OPEN_PANEL;
+use druid::{
+    Application, ClipboardFormat, Data, ExtEventSink, FileDialogOptions, FileSpec, SingleUse,
+    Target, WindowId,
+};
 use image::ImageOutputFormat;
-
 
 use crate::display_image_container::*;
 use crate::files::*;
@@ -278,7 +280,7 @@ impl AppState {
                 .unwrap()
                 .as_os_str(),
         )
-            .expect("Could not open image location.");
+        .expect("Could not open image location.");
     }
 
     pub fn copy_image_to_clipboard(&self) {
@@ -320,7 +322,9 @@ impl AppState {
                 .button_text("Load");
 
             let event_sink = self.druid_event_sink.lock().unwrap();
-            event_sink.submit_command(SHOW_OPEN_PANEL, options, window_id).expect("Failed to send command");
+            event_sink
+                .submit_command(SHOW_OPEN_PANEL, options, window_id)
+                .expect("Failed to send command");
         }
     }
 
@@ -331,6 +335,5 @@ impl AppState {
         current_image.clear_image();
         self.image_recenter_required = false;
         self.has_image = false;
-
     }
 }

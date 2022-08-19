@@ -4,7 +4,6 @@ use image::DynamicImage;
 
 use crate::events::*;
 
-
 // #[derive(Clone, Data)]
 pub struct DisplayImageContainer {
     image_data: Option<DynamicImage>,

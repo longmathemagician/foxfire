@@ -3,7 +3,6 @@ use druid::widget::prelude::*;
 use druid::{Color, Cursor, LocalizedString, Menu, MenuItem, Rect};
 use image::EncodableLayout;
 
-
 use crate::app_state::*;
 use crate::events::*;
 use crate::types::*;

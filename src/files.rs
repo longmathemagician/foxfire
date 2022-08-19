@@ -1,4 +1,3 @@
-
 use image::DynamicImage;
 use std::path::PathBuf;
 use std::sync::mpsc;

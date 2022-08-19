@@ -1,10 +1,4 @@
-
-
 use crate::types::*;
-
-
-
-
 
 #[derive(Debug)]
 pub struct ClickEvent {

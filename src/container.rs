@@ -236,7 +236,7 @@ impl Widget<AppState> for ContainerWidget {
 
         self.toolbar.paint(ctx, data, env);
 
-        if !data.has_image() {
+        if !data.has_image() && !data.get_loading_state() {
             self.load_image_button.paint(ctx, data, env);
         } else if data.get_loading_state() {
             let (text_color, stroke_color, fill_color) = if data.dark_theme_enabled {

@@ -10,6 +10,7 @@ use druid::{
 };
 use image::ImageOutputFormat;
 
+use crate::commands::REDRAW_IMAGE;
 use crate::display_image_container::*;
 use crate::types::{Direction, NewImageContainer};
 use crate::{IMAGE_LOADED, IMAGE_LOADING_STATE};
@@ -258,6 +259,11 @@ impl AppState {
             image_container_mutex.set_image(rotated_image);
             self.image_recenter_required = true;
         }
+        let event_sink_mutex = self.druid_event_sink.lock().unwrap();
+        let event_sink = &*event_sink_mutex;
+        event_sink
+            .submit_command(REDRAW_IMAGE, true, Target::Auto)
+            .expect("Failed to send redraw command");
     }
 
     pub fn open_folder(&self) {

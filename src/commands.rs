@@ -6,6 +6,8 @@ use druid::{
     WindowHandle, WindowId,
 };
 
+pub const REDRAW_IMAGE: Selector<bool> = Selector::new("redraw_image");
+
 pub const IMAGE_LOADING_STATE: Selector<bool> = Selector::new("image_loading_state");
 pub const IMAGE_LOADED: Selector<SingleUse<NewImageContainer>> = Selector::new("image_loaded");
 
@@ -71,6 +73,8 @@ impl AppDelegate<AppState> for Delegate {
         } else if let Some(true) = cmd.get(LOAD_NEW_IMAGE) {
             data.show_file_load_dialog();
             Handled::Yes
+        } else if let Some(true) = cmd.get(REDRAW_IMAGE) {
+            Handled::No // Pass down to container widget's event handler
         } else if let Some(file_info) = cmd.get(OPEN_FILE) {
             let file_path = file_info.path.to_str();
             if let Some(path_string) = file_path {

@@ -9,6 +9,7 @@ use druid::{KbKey, Point, Target};
 use druid::{Modifiers, Size};
 
 use crate::app_state::*;
+use crate::commands::REDRAW_IMAGE;
 use crate::image_widget::*;
 use crate::toolbar_widget::*;
 
@@ -48,11 +49,13 @@ impl ContainerWidget {
 
 impl Widget<AppState> for ContainerWidget {
     fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut AppState, _env: &Env) {
-        let needs_paint: bool = false;
-
         let event_sink = _ctx.get_external_handle();
 
-        if let Event::KeyDown(k) = _event {
+        if let Event::Command(cmd) = _event {
+            if let Some(true) = cmd.get(REDRAW_IMAGE) {
+                _ctx.request_update();
+            }
+        } else if let Event::KeyDown(k) = _event {
             // Key events are always handled here in the container
             if k.key == KbKey::ArrowRight {
                 event_sink
@@ -97,10 +100,6 @@ impl Widget<AppState> for ContainerWidget {
         } else {
             self.image_widget.event(_ctx, _event, _data, _env);
             self.toolbar.event(_ctx, _event, _data, _env);
-        }
-
-        if needs_paint {
-            _ctx.request_paint();
         }
     }
 

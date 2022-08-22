@@ -105,6 +105,8 @@ impl AppState {
             }
         }
 
+        files.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
+
         // Find & save index of the initial file
         if let Some(file_name) = current_file_name {
             for (index, entry) in files.iter().enumerate() {
@@ -298,9 +300,15 @@ impl AppState {
 
     pub fn show_file_load_dialog(&mut self) {
         if let Some(window_id) = self.window_id {
-            let jpg = FileSpec::new("Joint Photographic Experts Group", &["jpg", "jpeg"]);
-            let png = FileSpec::new("Portable Network Graphics", &["png"]);
-            let image_file_types = FileSpec::new("Other image files", &["jpg", "jpeg", "png"]);
+            let jpg = FileSpec::new(
+                "Joint Photographic Experts Group",
+                &["jpg", "jpeg", "JPG", "JPEG"],
+            );
+            let png = FileSpec::new("Portable Network Graphics", &["png", "PNG"]);
+            let image_file_types = FileSpec::new(
+                "Other image files",
+                &["jpg", "jpeg", "JPG", "JPEG", "png", "PNG", "bmp", "BMP"],
+            );
             let options = FileDialogOptions::new()
                 .allowed_types(vec![jpg, png, image_file_types])
                 .name_label("Image")

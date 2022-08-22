@@ -1,9 +1,10 @@
 use druid::keyboard_types::Key::Character;
-use druid::piet::{InterpolationMode, PietImage};
+use druid::kurbo::{RoundedRect, Shape};
+use druid::piet::{InterpolationMode, PietImage, Text, TextLayout, TextLayoutBuilder};
 
 use druid::widget::prelude::*;
 use druid::widget::{Button, Click, ControllerHost, Svg, SvgData};
-use druid::WidgetPod;
+use druid::{Color, FontFamily, WidgetPod};
 use druid::{KbKey, Point, Target};
 use druid::{Modifiers, Size};
 
@@ -25,10 +26,9 @@ pub struct ContainerWidget {
 
 impl ContainerWidget {
     pub fn new() -> Self {
-        let spinner_svg_data = match include_str!("../resources/spinner.svg").parse::<SvgData>() {
-            Ok(svg) => svg,
-            Err(_) => SvgData::default(),
-        };
+        let spinner_svg_data = include_str!("../resources/spinner.svg")
+            .parse::<SvgData>()
+            .unwrap();
         let spinner_size = spinner_svg_data.size();
 
         let button_data = String::from("Load image");
@@ -237,25 +237,62 @@ impl Widget<AppState> for ContainerWidget {
 
         self.toolbar.paint(ctx, data, env);
 
-        if data.get_loading_state() {
-            self.spinner.paint(ctx, data, env);
-        } else if !data.has_image() {
+        if !data.has_image() {
             self.load_image_button.paint(ctx, data, env);
+        } else if data.get_loading_state() {
+            let (text_color, stroke_color, fill_color) = if data.dark_theme_enabled {
+                (
+                    Color::rgb8(255, 255, 255),
+                    Color::rgb8(29, 14, 8),
+                    Color::rgba(0.2, 0.2, 0.2, 0.5),
+                )
+            } else {
+                (
+                    Color::rgb8(0, 0, 0),
+                    Color::rgb8(136, 192, 208),
+                    Color::rgba(1., 1., 1., 0.5),
+                )
+            };
+            let text_handler = ctx.text();
+            let layout = text_handler
+                .new_text_layout("Loading...")
+                .font(FontFamily::SYSTEM_UI, 24.0)
+                .text_color(text_color)
+                .build()
+                .unwrap();
+            let text_bounds = layout.image_bounds();
+            let osd_size = text_bounds.expand().inflate(15., 15.);
+
+            let osd_rect = druid::Rect::new(
+                container_size.width / 2. - osd_size.width() / 2.,
+                (container_size.height - data.get_toolbar_height()) / 2. - osd_size.height() / 2.,
+                container_size.width / 2. + osd_size.width() / 2.,
+                (container_size.height - data.get_toolbar_height()) / 2. + osd_size.height() / 2.,
+            );
+            let osd_blur_capture = ctx.capture_image_area(osd_rect);
+            if let Ok(osd_background_image) = osd_blur_capture {
+                let osd_blurred_background_result = ctx.blur_image(&osd_background_image, 30.);
+                if let Ok(osd_blurred_background) = osd_blurred_background_result {
+                    ctx.with_save(|ctx| {
+                        let osd_rrect = RoundedRect::from_rect(osd_rect, 10.0);
+                        ctx.clip(osd_rrect);
+                        ctx.draw_image(
+                            &osd_blurred_background,
+                            osd_rect,
+                            InterpolationMode::Bilinear,
+                        );
+
+                        ctx.fill(osd_rect, &fill_color);
+                        ctx.stroke(osd_rrect.into_path(0.5), &stroke_color, 4.);
+
+                        let text_point = Point::new(
+                            osd_rrect.center().x - osd_size.center().x,
+                            osd_rrect.center().y - osd_size.center().y,
+                        );
+                        ctx.draw_text(&layout, text_point);
+                    });
+                }
+            }
         }
-        // let osd_size = Size::new(64.0, 64.0);
-        // let osd_rect = druid::Rect::new(
-        //     container_size.width/2. - osd_size.width/2.,
-        //     container_size.height/2. - osd_size.height/2.,
-        //     container_size.width/2. + osd_size.width/2.,
-        //     container_size.height/2. + osd_size.height/2.
-        // );
-        // let osd_blur_capture = ctx.capture_image_area(osd_rect);
-        // if let Ok(osd_background_image) = osd_blur_capture {
-        //     let osd_blurred_background_result = ctx.blur_image(&osd_background_image, 30.);
-        //     if let Ok(osd_blurred_background) = osd_blurred_background_result {
-        //         ctx.draw_image(&osd_blurred_background, osd_rect, InterpolationMode::Bilinear);
-        //     }
-        //
-        // }
     }
 }

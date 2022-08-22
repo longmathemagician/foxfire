@@ -36,15 +36,6 @@ impl DisplayImageContainer {
     pub fn get_cache(&self) -> &PietImage {
         (self.image_cache.as_ref()).unwrap()
     }
-    pub fn peek_event_queue(&self) -> Option<&MouseEvent> {
-        self.event_queue.as_ref()
-    }
-    pub fn push_event_queue(&mut self, event: MouseEvent) {
-        self.event_queue = Some(event);
-    }
-    pub fn pop_event_queue(&mut self) -> Option<MouseEvent> {
-        self.event_queue.take()
-    }
     pub fn set_image(&mut self, new_image: DynamicImage) {
         let size = Size::new(new_image.width() as f64, new_image.height() as f64);
         self.image_size = size;

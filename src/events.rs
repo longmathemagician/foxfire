@@ -1,20 +1,6 @@
 use crate::types::*;
 
 #[derive(Debug)]
-pub struct ClickEvent {
-    position: Vec2D<f64>,
-}
-
-impl ClickEvent {
-    pub fn new(position: Vec2D<f64>) -> Self {
-        ClickEvent { position }
-    }
-    pub fn get_position(&self) -> Vec2D<f64> {
-        self.position
-    }
-}
-
-#[derive(Debug)]
 pub struct ZoomEvent {
     delta: f64,           // The distance reported by the scroll event
     position: Vec2D<f64>, // The screen-space point of the scroll event
@@ -28,9 +14,6 @@ impl ZoomEvent {
     }
     pub fn get_position(&self) -> Vec2D<f64> {
         self.position
-    }
-    pub fn set_position(&mut self, position: Vec2D<f64>) {
-        self.position = position
     }
 }
 #[derive(Debug)]
@@ -73,5 +56,4 @@ impl DragEvent {
 pub enum MouseEvent {
     Zoom(ZoomEvent),
     Drag(DragEvent),
-    Click(ClickEvent),
 }

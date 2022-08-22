@@ -123,4 +123,4 @@ pub fn platform_api_calls(_id: WindowId) {
 }
 
 #[cfg(not(windows))]
-pub fn platform_api_calls(id: WindowId) {}
+pub fn platform_api_calls(_id: WindowId) {}

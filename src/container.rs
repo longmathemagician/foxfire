@@ -1,16 +1,14 @@
 use druid::keyboard_types::Key::Character;
-use druid::piet::{Image, InterpolationMode, PietImage};
+use druid::piet::{InterpolationMode, PietImage};
 
 use druid::widget::prelude::*;
 use druid::widget::{Button, Click, ControllerHost, Svg, SvgData};
-use druid::Value::Rect;
 use druid::WidgetPod;
-use druid::{KbKey, Point, Target, WidgetExt};
+use druid::{KbKey, Point, Target};
 use druid::{Modifiers, Size};
 
 use crate::app_state::*;
 use crate::image_widget::*;
-use crate::toolbar_data::*;
 use crate::toolbar_widget::*;
 
 use crate::{LOAD_NEW_IMAGE, NEXT_IMAGE, PREV_IMAGE};
@@ -18,7 +16,7 @@ use crate::{LOAD_NEW_IMAGE, NEXT_IMAGE, PREV_IMAGE};
 // #[derive(Clone, Data)]
 pub struct ContainerWidget {
     image_widget: WidgetPod<AppState, ImageWidget>,
-    toolbar: WidgetPod<ToolbarState, ToolbarWidget>,
+    toolbar: WidgetPod<AppState, ToolbarWidget>,
     spinner: WidgetPod<AppState, Svg>,
     spinner_size: Size,
     load_image_button: WidgetPod<AppState, ControllerHost<Button<AppState>, Click<AppState>>>,
@@ -51,8 +49,6 @@ impl ContainerWidget {
 impl Widget<AppState> for ContainerWidget {
     fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut AppState, _env: &Env) {
         let needs_paint: bool = false;
-        let anchor = _data.get_toolbar_state();
-        let mut toolbar_state = anchor.lock().unwrap();
 
         let event_sink = _ctx.get_external_handle();
 
@@ -87,7 +83,7 @@ impl Widget<AppState> for ContainerWidget {
                 _data.set_image_center_state(false);
             } else {
                 _ctx.set_focus(self.toolbar.id());
-                self.toolbar.event(_ctx, _event, &mut toolbar_state, _env);
+                self.toolbar.event(_ctx, _event, _data, _env);
             }
         } else if let Event::Zoom(_e) = _event {
             _ctx.set_focus(self.image_widget.id());
@@ -95,16 +91,15 @@ impl Widget<AppState> for ContainerWidget {
             _data.set_image_center_state(false);
         } else if let Event::Internal(_e) = _event {
             self.image_widget.event(_ctx, _event, _data, _env);
-            self.toolbar.event(_ctx, _event, &mut toolbar_state, _env);
+            self.toolbar.event(_ctx, _event, _data, _env);
         } else if let Event::WindowConnected = _event {
-            _data.set_window_readiness(true);
         } else if let Event::WindowSize(_e) = _event {
         } else {
             self.image_widget.event(_ctx, _event, _data, _env);
-            self.toolbar.event(_ctx, _event, &mut toolbar_state, _env);
+            self.toolbar.event(_ctx, _event, _data, _env);
         }
 
-        if needs_paint == true {
+        if needs_paint {
             _ctx.request_paint();
         }
     }
@@ -118,13 +113,11 @@ impl Widget<AppState> for ContainerWidget {
     ) {
         self.image_widget.lifecycle(_ctx, _event, _data, _env);
 
-        let anchor = _data.get_toolbar_state();
-        let toolbar_state = anchor.lock().unwrap();
-        self.toolbar.lifecycle(_ctx, _event, &toolbar_state, _env);
+        self.toolbar.lifecycle(_ctx, _event, _data, _env);
 
         self.spinner.lifecycle(_ctx, _event, _data, _env);
 
-        self.load_image_button.lifecycle(_ctx, _event, &_data, _env);
+        self.load_image_button.lifecycle(_ctx, _event, _data, _env);
     }
 
     fn update(&mut self, _ctx: &mut UpdateCtx, _old_data: &AppState, _data: &AppState, _env: &Env) {
@@ -137,7 +130,10 @@ impl Widget<AppState> for ContainerWidget {
             needs_paint = true;
         }
 
-        if needs_paint == true {
+        if needs_paint {
+            let new_window_title = String::from("Foxfire - ") + &_data.get_image_name();
+            _ctx.window().set_title(&new_window_title);
+            self.blur_cache = None;
             _ctx.children_changed();
             _ctx.request_paint();
         }
@@ -161,14 +157,11 @@ impl Widget<AppState> for ContainerWidget {
             Size::new(bc.max().width, toolbar_height),
         );
 
-        let anchor = _data.get_toolbar_state();
-        let toolbar_state = anchor.lock().unwrap();
-
         self.toolbar
-            .layout(_layout_ctx, &toolbar_layout, &toolbar_state, _env);
+            .layout(_layout_ctx, &toolbar_layout, _data, _env);
         self.toolbar.set_origin(
             _layout_ctx,
-            &toolbar_state,
+            _data,
             _env,
             Point::new(0.0, bc.max().height - toolbar_height),
         );
@@ -182,13 +175,13 @@ impl Widget<AppState> for ContainerWidget {
             .set_origin(_layout_ctx, _data, _env, spinner_origin);
 
         self.load_image_button
-            .layout(_layout_ctx, &bc.loosen(), &_data, _env);
+            .layout(_layout_ctx, &bc.loosen(), _data, _env);
         let load_image_button_origin = Point::new(
             bc.max().width / 2.0 - self.spinner_size.width / 2.0,
             (bc.max().height - toolbar_height) / 2.0 - self.spinner_size.height / 2.0,
         );
         self.load_image_button
-            .set_origin(_layout_ctx, &_data, _env, load_image_button_origin);
+            .set_origin(_layout_ctx, _data, _env, load_image_button_origin);
 
         if bc.is_width_bounded() && bc.is_height_bounded() {
             bc.max()
@@ -202,15 +195,11 @@ impl Widget<AppState> for ContainerWidget {
         let container_size = ctx.size();
 
         let final_region = ctx.region().rects().last();
+        let region_count: usize = ctx.region().rects().len();
 
         let is_full_paint = if let Some(clip_rect) = final_region {
-            if clip_rect.width().ceil() == container_size.width.ceil()
+            clip_rect.width().ceil() == container_size.width.ceil()
                 && clip_rect.height().ceil() == container_size.height.ceil()
-            {
-                true // Context has a full size clip region
-            } else {
-                false // Context's clip region is smaller than the context
-            }
         } else {
             true // Context lacks a clip region
         };
@@ -223,21 +212,36 @@ impl Widget<AppState> for ContainerWidget {
             container_size.height - container_alignment_offset,
         );
 
-        let anchor = data.get_toolbar_state();
-        let toolbar_state = anchor.lock().unwrap();
-        let paint_region = match final_region {
-            Some(rect) => *rect,
-            _ => container_size.to_rect(),
-        };
-
         self.image_widget.paint(ctx, data, env);
+
+        if is_full_paint && region_count > 0 {
+            let capture_result = ctx.capture_image_area(toolbar_blur_region_rect);
+            if let Ok(captured_image) = capture_result {
+                let blur_result = ctx.blur_image(&captured_image, 15.);
+                if let Ok(blurred_image) = blur_result {
+                    ctx.draw_image(
+                        &blurred_image,
+                        toolbar_blur_region_rect,
+                        InterpolationMode::Bilinear,
+                    );
+                    self.blur_cache = Some(blurred_image);
+                }
+            }
+        } else if let Some(cached_image) = &self.blur_cache {
+            ctx.draw_image(
+                cached_image,
+                toolbar_blur_region_rect,
+                InterpolationMode::Bilinear,
+            );
+        }
+
+        self.toolbar.paint(ctx, data, env);
 
         if data.get_loading_state() {
             self.spinner.paint(ctx, data, env);
         } else if !data.has_image() {
-            self.load_image_button.paint(ctx, &data, env);
+            self.load_image_button.paint(ctx, data, env);
         }
-
         // let osd_size = Size::new(64.0, 64.0);
         // let osd_rect = druid::Rect::new(
         //     container_size.width/2. - osd_size.width/2.,
@@ -253,33 +257,5 @@ impl Widget<AppState> for ContainerWidget {
         //     }
         //
         // }
-
-        if is_full_paint {
-            let capture_result = ctx.capture_image_area(toolbar_blur_region_rect);
-            if let Ok(captured_image) = capture_result {
-                let blur_result = ctx.blur_image(&captured_image, 30.);
-                if let Ok(blurred_image) = blur_result {
-                    ctx.draw_image(
-                        &blurred_image,
-                        toolbar_blur_region_rect,
-                        InterpolationMode::Bilinear,
-                    );
-
-                    self.blur_cache = Some(blurred_image)
-                }
-            }
-        } else if let Some(cached_image) = &self.blur_cache {
-            ctx.draw_image(
-                cached_image,
-                toolbar_blur_region_rect,
-                InterpolationMode::Bilinear,
-            );
-        }
-
-        ctx.with_child_ctx(paint_region, move |h| {
-            h.with_child_ctx(paint_region, move |i| {
-                self.toolbar.paint(i, &toolbar_state, env);
-            });
-        });
     }
 }

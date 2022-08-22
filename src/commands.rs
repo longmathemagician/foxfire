@@ -1,5 +1,5 @@
-use crate::types::Direction;
-use crate::{platform_api_calls, AppState, NewImageContainer};
+use crate::types::{Direction, NewImageContainer};
+use crate::{platform_api_calls, AppState};
 use druid::commands::OPEN_FILE;
 use druid::{
     AppDelegate, Application, Command, DelegateCtx, Env, Handled, Selector, SingleUse, Target,
@@ -99,11 +99,12 @@ impl AppDelegate<AppState> for Delegate {
 
     fn window_removed(
         &mut self,
-        id: WindowId,
-        data: &mut AppState,
-        env: &Env,
-        ctx: &mut DelegateCtx,
+        _id: WindowId,
+        _data: &mut AppState,
+        _env: &Env,
+        _ctx: &mut DelegateCtx,
     ) {
+        _data.close_current_image();
         Application::global().quit()
     }
 }

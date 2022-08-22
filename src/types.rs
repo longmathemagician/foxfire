@@ -1,5 +1,7 @@
 use std::ops::*;
 
+use image::DynamicImage;
+
 #[derive(Debug, Copy, Clone)]
 pub struct ImageTransformation {
     pub affine_matrix: Matrix2x2<f64>,
@@ -124,5 +126,16 @@ where
             self.a * rhs.x + self.b * rhs.y,
             self.c * rhs.x + self.d * rhs.y,
         )
+    }
+}
+
+pub struct NewImageContainer {
+    pub path: String,
+    pub image: DynamicImage,
+}
+
+impl NewImageContainer {
+    pub fn from_string_and_dynamicimage(path: String, image: DynamicImage) -> Self {
+        Self { path, image }
     }
 }

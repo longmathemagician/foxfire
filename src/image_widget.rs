@@ -254,8 +254,6 @@ impl Widget<AppState> for ImageWidget {
             image_transform.screen_space_offset = drag_offset_screenspace;
 
             image_container.event_queue = None;
-        } else if let Some(MouseEvent::Click(_)) = &image_container.event_queue {
-            image_container.event_queue = None;
         }
 
         let image_origin_screenspace = image_transform.affine_matrix

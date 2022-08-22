@@ -11,16 +11,13 @@ use druid::{
 use image::ImageOutputFormat;
 
 use crate::display_image_container::*;
-use crate::files::*;
-use crate::toolbar_data::*;
-use crate::types::Direction;
+use crate::types::{Direction, NewImageContainer};
 use crate::{IMAGE_LOADED, IMAGE_LOADING_STATE};
 
 #[derive(Clone, Data)]
 pub struct AppState {
     #[data(ignore)]
     window_id: Option<WindowId>,
-    window_ready: bool,
     current_image: Arc<Mutex<DisplayImageContainer>>,
     has_image: bool,
     loading_new_image: Arc<Mutex<bool>>,
@@ -28,19 +25,11 @@ pub struct AppState {
     current_image_name: String,
     image_recenter_required: bool,
     image_list: Arc<Vec<PathBuf>>,
-    toolbar_state: Arc<Mutex<ToolbarState>>,
     druid_event_sink: Arc<Mutex<ExtEventSink>>,
     pub dark_theme_enabled: bool,
 }
 
 impl AppState {
-    pub fn get_window_readiness(&self) -> bool {
-        self.window_ready
-    }
-    pub fn set_window_readiness(&mut self, state: bool) {
-        self.window_ready = state;
-    }
-
     pub fn set_window_id(&mut self, id: WindowId) {
         self.window_id = Some(id);
     }
@@ -48,7 +37,6 @@ impl AppState {
     pub fn from(dark_theme_enabled: bool, event_sink: ExtEventSink) -> Self {
         Self {
             window_id: None,
-            window_ready: false,
             current_image: Arc::new(Mutex::new(DisplayImageContainer::new())),
             has_image: false,
             loading_new_image: Arc::new(Mutex::new(false)),
@@ -56,7 +44,6 @@ impl AppState {
             current_image_name: String::new(),
             image_recenter_required: false,
             image_list: Arc::new(Vec::new()),
-            toolbar_state: Arc::new(Mutex::new(ToolbarState::new(dark_theme_enabled))),
             druid_event_sink: Arc::new(Mutex::new(event_sink)),
             dark_theme_enabled,
         }
@@ -93,8 +80,8 @@ impl AppState {
         }
     }
 
-    fn parse_folder(&mut self, path: &PathBuf) {
-        let path_anchor = path.clone();
+    fn parse_folder(&mut self, path: &Path) {
+        let path_anchor = path.to_path_buf();
 
         let mut files: Vec<PathBuf> = Vec::new();
         let mut current_index: usize = 0;
@@ -134,9 +121,9 @@ impl AppState {
         self.set_image_list(current_index, files);
     }
 
-    fn load_image(&mut self, image_path: &PathBuf) {
+    fn load_image(&mut self, image_path: &Path) {
         let event_sink_mutex_ref = self.druid_event_sink.clone();
-        let path_anchor = image_path.clone();
+        let path_anchor = image_path.to_path_buf();
         thread::spawn(move || {
             let image_result = image::open(&path_anchor);
             let event_sink_mutex = event_sink_mutex_ref.lock().unwrap();
@@ -156,9 +143,11 @@ impl AppState {
     }
     pub fn set_current_image(&mut self, container_wrapper: Option<NewImageContainer>) {
         if let Some(wrapper) = container_wrapper {
-            let mut current_image = self.current_image.lock().unwrap();
-            self.current_image_name = wrapper.path;
-            current_image.set_image(wrapper.image);
+            {
+                let mut current_image = self.current_image.lock().unwrap();
+                current_image.set_image(wrapper.image);
+            }
+            self.set_current_image_name(wrapper.path);
             self.image_recenter_required = true;
             self.has_image = true;
         }
@@ -168,9 +157,6 @@ impl AppState {
     }
     pub fn get_toolbar_height(&self) -> f64 {
         80.0
-    }
-    pub fn get_toolbar_state(&self) -> Arc<Mutex<ToolbarState>> {
-        self.toolbar_state.clone()
     }
     pub fn load_next_image(&mut self) {
         if self.image_list.len() > 0 {
@@ -248,7 +234,7 @@ impl AppState {
         }
 
         let wallpaper_set_result = wallpaper::set_from_path(
-            &self.image_list[self.current_image_index]
+            self.image_list[self.current_image_index]
                 .clone()
                 .to_str()
                 .unwrap(),

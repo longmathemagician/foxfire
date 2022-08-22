@@ -2,10 +2,6 @@
 use druid::{AppLauncher, WindowDesc};
 use std::env;
 
-mod files;
-
-use files::*;
-
 mod events;
 
 mod types;
@@ -14,12 +10,10 @@ mod commands;
 
 use commands::*;
 
-mod button_data;
 mod button_widget;
 mod container;
 mod display_image_container;
 mod image_widget;
-mod toolbar_data;
 mod toolbar_widget;
 
 mod app_state;
@@ -40,7 +34,7 @@ fn main() {
 
     // Build the UI structure
     let main_window = WindowDesc::new(build_ui())
-        .title("")
+        .title("Foxfire - Image Viewer")
         .with_min_size((450., 240.))
         .window_size((640., 480.));
     let launcher = AppLauncher::with_window(main_window).log_to_console();

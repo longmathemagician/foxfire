@@ -220,7 +220,7 @@ impl Widget<AppState> for ImageWidget {
                     image_size.width as usize,
                     image_size.height as usize,
                     image_rgba.as_bytes(),
-                    ImageFormat::RgbaPremul,
+                    ImageFormat::RgbaSeparate,
                 );
                 image_container.set_cache(image_result.unwrap());
             }

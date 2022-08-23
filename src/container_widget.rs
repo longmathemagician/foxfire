@@ -36,28 +36,28 @@ impl ContainerWidget {
     }
 
     fn paint_osd(&mut self, ctx: &mut PaintCtx, data: &AppState, env: &Env) {
-        // let mut container_size = ctx.size();
-        // container_size.height -= data.get_toolbar_height();
-        // let container_rect = container_size.to_rect().inset(11.);
-        // let osd_size = self.osd_widget.widget().get_size();
-        // let osd_rect = Rect::from_center_size(container_rect.center(), osd_size);
-        // let osd_rect_rounded = RoundedRect::from_rect(osd_rect, 10.);
-        // ctx.with_save(|ctx| {
-        //     ctx.clip(osd_rect_rounded);
-        //     let osd_blur_capture = ctx.capture_image_area(osd_rect);
-        //     if let Ok(osd_background_image) = osd_blur_capture {
-        //         let osd_blurred_background_result = ctx.blur_image(&osd_background_image, 15.);
-        //         if let Ok(osd_blurred_background) = osd_blurred_background_result {
-        //             ctx.draw_image(
-        //                 &osd_blurred_background,
-        //                 osd_rect,
-        //                 InterpolationMode::Bilinear,
-        //             );
-        //         }
-        //     }
-        // });
-        //
-        // self.osd_widget.paint(ctx, data, env);
+        let mut container_size = ctx.size();
+        container_size.height -= data.get_toolbar_height();
+        let container_rect = container_size.to_rect().inset(11.);
+        let osd_size = self.osd_widget.widget().get_size();
+        let osd_rect = Rect::from_center_size(container_rect.center(), osd_size);
+        let osd_rect_rounded = RoundedRect::from_rect(osd_rect, 10.);
+        ctx.with_save(|ctx| {
+            ctx.clip(osd_rect_rounded);
+            let osd_blur_capture = ctx.capture_image_area(osd_rect);
+            if let Ok(osd_background_image) = osd_blur_capture {
+                let osd_blurred_background_result = ctx.blur_image(&osd_background_image, 15.);
+                if let Ok(osd_blurred_background) = osd_blurred_background_result {
+                    ctx.draw_image(
+                        &osd_blurred_background,
+                        osd_rect,
+                        InterpolationMode::Bilinear,
+                    );
+                }
+            }
+        });
+        
+        self.osd_widget.paint(ctx, data, env);
     }
 }
 

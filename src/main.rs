@@ -11,8 +11,8 @@ mod commands;
 use commands::*;
 
 mod button_widget;
-mod container;
-mod display_image_container;
+mod container_widget;
+mod image_container;
 mod image_widget;
 mod toolbar_widget;
 

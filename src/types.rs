@@ -1,5 +1,7 @@
 use std::ops::*;
+use std::time::Instant;
 
+use druid::Data;
 use image::DynamicImage;
 
 #[derive(Debug, Copy, Clone)]
@@ -30,7 +32,7 @@ pub enum Direction {
     Right,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Data)]
 pub struct Vec2D<T> {
     pub x: T,
     pub y: T,
@@ -131,11 +133,16 @@ where
 
 pub struct NewImageContainer {
     pub path: String,
+    pub timestamp: Instant,
     pub image: DynamicImage,
 }
 
 impl NewImageContainer {
-    pub fn from_string_and_dynamicimage(path: String, image: DynamicImage) -> Self {
-        Self { path, image }
+    pub fn from(path: String, timestamp: Instant, image: DynamicImage) -> Self {
+        Self {
+            path,
+            timestamp,
+            image,
+        }
     }
 }

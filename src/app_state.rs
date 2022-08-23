@@ -2,25 +2,26 @@ use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::time::Instant;
 
 use druid::commands::SHOW_OPEN_PANEL;
 use druid::{
-    Application, ClipboardFormat, Data, ExtEventSink, FileDialogOptions, FileSpec, SingleUse,
-    Target, WindowId,
+    Application, ClipboardFormat, Command, Data, ExtEventSink, FileDialogOptions, FileSpec,
+    SingleUse, Target, WindowId,
 };
 use image::ImageOutputFormat;
 
-use crate::commands::REDRAW_IMAGE;
-use crate::display_image_container::*;
+use crate::image_container::*;
 use crate::types::{Direction, NewImageContainer};
-use crate::{IMAGE_LOADED, IMAGE_LOADING_STATE};
+use crate::{IMAGE_LOAD_FAILURE, IMAGE_LOAD_SUCCESS, REDRAW_IMAGE};
 
 #[derive(Clone, Data)]
 pub struct AppState {
     #[data(ignore)]
     window_id: Option<WindowId>,
-    current_image: Arc<Mutex<DisplayImageContainer>>,
-    has_image: bool,
+    #[data(ignore)]
+    current_image: Arc<Mutex<ImageState>>,
+    command_queue: Arc<Mutex<Vec<Command>>>,
     loading_new_image: Arc<Mutex<bool>>,
     current_image_index: usize,
     current_image_name: String,
@@ -38,8 +39,8 @@ impl AppState {
     pub fn from(dark_theme_enabled: bool, event_sink: ExtEventSink) -> Self {
         Self {
             window_id: None,
-            current_image: Arc::new(Mutex::new(DisplayImageContainer::new())),
-            has_image: false,
+            current_image: Arc::new(Mutex::new(ImageState::Empty)),
+            command_queue: Arc::new(Mutex::new(vec![])),
             loading_new_image: Arc::new(Mutex::new(false)),
             current_image_index: 0,
             current_image_name: String::new(),
@@ -51,7 +52,20 @@ impl AppState {
     }
 
     pub fn has_image(&self) -> bool {
-        self.has_image
+        let image_guard = self.current_image.lock().unwrap();
+        match *image_guard {
+            ImageState::Loaded(_) => true,
+            ImageState::Error(_) => true,
+            ImageState::Empty => false,
+        }
+    }
+    pub fn has_image_error(&self) -> bool {
+        let image_guard = self.current_image.lock().unwrap();
+        match *image_guard {
+            ImageState::Loaded(_) => false,
+            ImageState::Error(_) => true,
+            ImageState::Empty => false,
+        }
     }
     pub fn get_image_center_state(&self) -> bool {
         self.image_recenter_required
@@ -65,16 +79,17 @@ impl AppState {
     }
 
     pub fn startup(&mut self, path: String) {
+        let current_time = Instant::now();
         let file_path_result = Path::new(&path).canonicalize();
         if let Ok(file_path) = file_path_result {
             if file_path.is_file() {
                 self.set_loading_state(true);
-                self.load_image(&file_path);
+                self.load_image(&file_path, &current_time);
                 self.parse_folder(&file_path);
             } else if file_path.is_dir() {
                 self.parse_folder(&file_path);
                 let first_image = self.image_list[0].clone();
-                self.load_image(&first_image);
+                self.load_image(&first_image, &current_time);
             }
         } else {
             self.set_loading_state(false);
@@ -124,22 +139,23 @@ impl AppState {
         self.set_image_list(current_index, files);
     }
 
-    fn load_image(&mut self, image_path: &Path) {
+    fn load_image(&mut self, image_path: &Path, request_timestamp: &Instant) {
         let event_sink_mutex_ref = self.druid_event_sink.clone();
         let path_anchor = image_path.to_path_buf();
+        let request_timestamp = *request_timestamp;
         thread::spawn(move || {
             let image_result = image::open(&path_anchor);
             let event_sink_mutex = event_sink_mutex_ref.lock().unwrap();
             let event_sink = &*event_sink_mutex;
             if let Ok(image) = image_result {
                 let pth = path_anchor.to_str().unwrap().to_string();
-                let wrapper = NewImageContainer::from_string_and_dynamicimage(pth, image);
+                let wrapper = NewImageContainer::from(pth, request_timestamp, image);
                 event_sink
-                    .submit_command(IMAGE_LOADED, SingleUse::new(wrapper), Target::Auto)
+                    .submit_command(IMAGE_LOAD_SUCCESS, SingleUse::new(wrapper), Target::Auto)
                     .expect("Failed to send new image loaded command");
             } else {
                 event_sink
-                    .submit_command(IMAGE_LOADING_STATE, false, Target::Auto)
+                    .submit_command(IMAGE_LOAD_FAILURE, path_anchor, Target::Auto)
                     .expect("Failed to submit image loading failure notification command");
             }
         });
@@ -147,78 +163,70 @@ impl AppState {
     pub fn set_current_image(&mut self, container_wrapper: Option<NewImageContainer>) {
         if let Some(wrapper) = container_wrapper {
             {
-                let mut current_image = self.current_image.lock().unwrap();
-                current_image.set_image(wrapper.image);
+                let mut image_guard = self.current_image.lock().unwrap();
+
+                if let ImageState::Empty | ImageState::Error(_) = *image_guard {
+                    let new_image = ImageContainer::new(wrapper.image, wrapper.timestamp);
+                    *image_guard = ImageState::Loaded(new_image);
+                } else if let ImageState::Loaded(current_image) = &*image_guard {
+                    if current_image.get_timestamp() < &wrapper.timestamp {
+                        let new_image = ImageContainer::new(wrapper.image, wrapper.timestamp);
+                        *image_guard = ImageState::Loaded(new_image);
+                    }
+                }
             }
-            self.set_current_image_name(wrapper.path);
+            let image_name = Path::new(&wrapper.path)
+                .file_name()
+                .unwrap()
+                .to_os_string()
+                .into_string()
+                .unwrap();
+            self.set_current_image_name(image_name);
             self.image_recenter_required = true;
-            self.has_image = true;
         }
     }
-    pub fn get_image_ref(&self) -> Arc<Mutex<DisplayImageContainer>> {
+    pub fn image_load_failure(&mut self, image_path: &PathBuf) {
+        let image_state_guard = self.get_image_ref();
+        let mut image_state = image_state_guard.lock().unwrap();
+
+        let failed_image_placeholder = FailedImageContainer::new();
+        *image_state = ImageState::Error(failed_image_placeholder);
+
+        let image_name = Path::new(image_path)
+            .file_name()
+            .unwrap()
+            .to_os_string()
+            .into_string()
+            .unwrap();
+        self.set_current_image_name(image_name);
+        self.image_recenter_required = true;
+    }
+    pub fn get_image_ref(&self) -> Arc<Mutex<ImageState>> {
         self.current_image.clone()
     }
     pub fn get_toolbar_height(&self) -> f64 {
         80.0
     }
-    pub fn load_next_image(&mut self) {
+    pub fn load_next_image(&mut self, request_timestamp: &Instant) {
         if self.image_list.len() > 0 {
-            println!(
-                "Next image requested. Current index {}/{}",
-                self.current_image_index,
-                self.image_list.len()
-            );
             if self.current_image_index >= self.image_list.len() - 1 {
-                println!("Current image is last in folder, wrapping");
                 self.current_image_index = 0;
             } else {
                 self.current_image_index += 1;
             }
-            self.current_image_name = self.image_list[self.current_image_index]
-                .clone()
-                .file_name()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .to_string();
-            print!("Current image name: {}", self.current_image_name);
-            println!(
-                "Next image requested. Current index {}/{}",
-                self.current_image_index,
-                self.image_list.len()
-            );
             let next_image_path = self.image_list[self.current_image_index].clone();
-            self.load_image(&next_image_path);
+            self.load_image(&next_image_path, request_timestamp);
         }
     }
-    pub fn load_prev_image(&mut self) {
+    pub fn load_prev_image(&mut self, request_timestamp: &Instant) {
         if self.image_list.len() > 0 {
-            println!(
-                "Previous image requested. Current index {}/{}",
-                self.current_image_index,
-                self.image_list.len()
-            );
             if self.current_image_index == 0 {
-                println!("Current image is first in folder, wrapping to last");
                 self.current_image_index = self.image_list.len() - 1;
             } else {
                 self.current_image_index -= 1;
             }
-            self.current_image_name = self.image_list[self.current_image_index]
-                .clone()
-                .file_name()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .to_string();
-            print!("Current image name: {}. ", self.current_image_name);
-            println!(
-                "Previous image requested. Current index {}/{}",
-                self.current_image_index,
-                self.image_list.len()
-            );
             let previous_image_path = self.image_list[self.current_image_index].clone();
-            self.load_image(&previous_image_path);
+            self.load_image(&previous_image_path, request_timestamp);
         }
     }
 
@@ -231,38 +239,41 @@ impl AppState {
     }
 
     pub fn set_as_wallpaper(&self) {
-        let mode_set_result = wallpaper::set_mode(wallpaper::Mode::Span);
-        if mode_set_result.is_err() {
-            println!("Could not set wallpaper mode");
+        fn set_as_wallpaper_helper(path: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+            let path = path
+                .into_os_string()
+                .into_string()
+                .map_err(|_e| "Failed to convert path to string")?;
+
+            thread::spawn(move || {
+                let _mode_set_result = wallpaper::set_mode(wallpaper::Mode::Span);
+                let _wallpaper_set_result = wallpaper::set_from_path(&path);
+            });
+            Ok(())
         }
 
-        let wallpaper_set_result = wallpaper::set_from_path(
-            self.image_list[self.current_image_index]
-                .clone()
-                .to_str()
-                .unwrap(),
-        );
-        if wallpaper_set_result.is_err() {
-            println!("Could not set wallpaper")
-        }
+        let _result =
+            set_as_wallpaper_helper(self.image_list[self.current_image_index].to_path_buf());
     }
 
-    pub fn rotate_in_memory(&mut self, direction: Direction) {
-        let mut image_container_mutex = self.current_image.lock().unwrap();
-        let current_image_option = image_container_mutex.get_image();
+    pub fn rotate_in_memory(&mut self, direction: Direction, timestamp: &Instant) {
+        let image_state_guard = self.get_image_ref();
+        let mut image_state = image_state_guard.lock().unwrap();
 
-        if let Some(image) = current_image_option {
+        if let ImageState::Loaded(image_container) = &*image_state {
+            let image_ref = image_container.get_image();
             let rotated_image = match direction {
-                Direction::Left => image.rotate270(),
-                Direction::Right => image.rotate90(),
+                Direction::Left => image_ref.rotate270(),
+                Direction::Right => image_ref.rotate90(),
             };
-            image_container_mutex.set_image(rotated_image);
+            let rotated_image_container = ImageContainer::new(rotated_image, *timestamp);
+            *image_state = ImageState::Loaded(rotated_image_container);
             self.image_recenter_required = true;
         }
         let event_sink_mutex = self.druid_event_sink.lock().unwrap();
         let event_sink = &*event_sink_mutex;
         event_sink
-            .submit_command(REDRAW_IMAGE, true, Target::Auto)
+            .submit_command(REDRAW_IMAGE, (), Target::Auto)
             .expect("Failed to send redraw command");
     }
 
@@ -279,12 +290,13 @@ impl AppState {
 
     pub fn copy_image_to_clipboard(&self) {
         let mut clipboard = Application::global().clipboard();
-        let image_container_mutex = self.current_image.lock().unwrap();
-        let current_image_option = image_container_mutex.get_image();
+        let image_state_guard = self.get_image_ref();
+        let image_state = image_state_guard.lock().unwrap();
 
-        if let Some(image) = current_image_option {
+        if let ImageState::Loaded(image) = &*image_state {
             let mut clipboard_data_buffer = std::io::Cursor::new(Vec::new());
             image
+                .get_image()
                 .write_to(&mut clipboard_data_buffer, ImageOutputFormat::Png)
                 .expect("Error encoding image file to in-memory buffer");
             let clipboard_data = [ClipboardFormat::new(
@@ -329,11 +341,11 @@ impl AppState {
     }
 
     pub fn close_current_image(&mut self) {
+        let image_state_guard = self.get_image_ref();
+        let mut image_state = image_state_guard.lock().unwrap();
+        *image_state = ImageState::Empty;
         self.set_image_list(0, Vec::new());
-        let mut current_image = self.current_image.lock().unwrap();
         self.current_image_name = String::new();
-        current_image.clear_image();
         self.image_recenter_required = false;
-        self.has_image = false;
     }
 }

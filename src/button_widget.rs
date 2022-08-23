@@ -1,9 +1,10 @@
 use druid::widget::prelude::*;
 use druid::widget::{Svg, SvgData};
 use druid::{MouseButton, Point, Selector, Target, WidgetPod};
+use std::time::Instant;
 
 pub struct ThemedButton {
-    command: Selector<bool>,
+    command: Selector<Instant>,
     size: Size,
     offset: Point,
     image: WidgetPod<bool, Svg>,
@@ -15,7 +16,7 @@ pub struct ThemedButton {
 }
 impl ThemedButton {
     pub fn new(
-        command: Selector<bool>,
+        command: Selector<Instant>,
         size: Size,
         offset: Point,
         image: &str,
@@ -75,7 +76,7 @@ impl Widget<bool> for ThemedButton {
                 if m.button == MouseButton::Left && self.is_pressed {
                     let event_sink = _ctx.get_external_handle();
                     event_sink
-                        .submit_command(self.command, true, Target::Auto)
+                        .submit_command(self.command, Instant::now(), Target::Auto)
                         .expect("Failed to send command");
                     self.is_pressed = false;
                     _ctx.request_paint();

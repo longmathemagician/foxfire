@@ -1,6 +1,8 @@
 [package]
 name = "foxfire"
-version = "0.1.0"
+description = "A simple photo viewer."
+version = "0.1.1"
+authors = ["Abelian Dynamics"]
 edition = "2021"
 build = "build.rs"
 
@@ -32,3 +34,14 @@ piet-common = { path = "dependencies/piet/piet-common" }
 
 [patch."https://github.com/longmathemagician/druid.git"]
 druid = { path = "dependencies/druid/druid" }
+
+[package.metadata.bundle]
+name = "Foxfire"
+identifier = "com.abeliandynamics.foxfire"
+icon = ["resources/icons/32x32.png", "resources/icons/128x128.png", "resources/icons/128x128@2x.png"]
+category = "public.app-category.graphics-design"
+short_description = "Photo viewer."
+long_description = """
+Foxfire is a minimalist photo viewer, written in Rust using the
+Druid UI framework.
+"""

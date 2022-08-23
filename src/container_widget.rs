@@ -1,6 +1,7 @@
 use druid::keyboard_types::Key::Character;
 use druid::kurbo::{RoundedRect, Shape};
 use druid::piet::{InterpolationMode, PietImage, Text, TextLayout, TextLayoutBuilder};
+use std::time::Instant;
 
 use druid::widget::prelude::*;
 use druid::widget::{Button, Click, ControllerHost, Svg, SvgData};
@@ -45,6 +46,105 @@ impl ContainerWidget {
             blur_cache: None,
         }
     }
+
+    fn paint_widgets(
+        &mut self,
+        container_size: Size,
+        is_full_paint: bool,
+        ctx: &mut PaintCtx,
+        data: &AppState,
+        env: &Env,
+    ) {
+        let container_alignment_offset = if cfg!(windows) { 0.01 } else { 0.0 };
+        let toolbar_blur_region_rect = druid::Rect::new(
+            0.,
+            container_size.height - data.get_toolbar_height() + container_alignment_offset,
+            container_size.width,
+            container_size.height - container_alignment_offset,
+        );
+
+        self.image_widget.paint(ctx, data, env);
+
+        if is_full_paint {
+            let capture_result = ctx.capture_image_area(toolbar_blur_region_rect);
+            if let Ok(captured_image) = capture_result {
+                let blur_result = ctx.blur_image(&captured_image, 15.);
+                if let Ok(blurred_image) = blur_result {
+                    ctx.draw_image(
+                        &blurred_image,
+                        toolbar_blur_region_rect,
+                        InterpolationMode::Bilinear,
+                    );
+                    self.blur_cache = Some(blurred_image);
+                }
+            }
+        } else if let Some(cached_image) = &self.blur_cache {
+            ctx.draw_image(
+                cached_image,
+                toolbar_blur_region_rect,
+                InterpolationMode::Bilinear,
+            );
+        }
+
+        self.toolbar.paint(ctx, data, env);
+    }
+    fn paint_osd(
+        &mut self,
+        ctx: &mut PaintCtx,
+        data: &AppState,
+        text_contents: String,
+        text_size: f64,
+        stroke_color: Color,
+    ) {
+        let (text_color, fill_color) = if data.dark_theme_enabled {
+            (Color::rgb8(255, 255, 255), Color::rgba(0.2, 0.2, 0.2, 0.5))
+        } else {
+            (Color::rgb8(0, 0, 0), Color::rgba(1., 1., 1., 0.5))
+        };
+        let container_size = ctx.size();
+        let text_handler = ctx.text();
+        let layout = text_handler
+            .new_text_layout(text_contents)
+            .font(FontFamily::SYSTEM_UI, text_size)
+            .text_color(text_color)
+            .build()
+            .unwrap();
+        let text_bounds = layout.image_bounds();
+        let osd_size = text_bounds.expand().inflate(25., 25.);
+
+        let osd_rect = druid::Rect::new(
+            container_size.width / 2. - osd_size.width() / 2.,
+            (container_size.height - data.get_toolbar_height()) / 2. - osd_size.height() / 2.,
+            container_size.width / 2. + osd_size.width() / 2.,
+            (container_size.height - data.get_toolbar_height()) / 2. + osd_size.height() / 2.,
+        );
+        let osd_rrect = RoundedRect::from_rect(osd_rect, 10.0);
+
+        ctx.with_save(|ctx| {
+            ctx.clip(osd_rrect);
+
+            let osd_blur_capture = ctx.capture_image_area(osd_rect);
+            if let Ok(osd_background_image) = osd_blur_capture {
+                let osd_blurred_background_result = ctx.blur_image(&osd_background_image, 15.);
+                if let Ok(osd_blurred_background) = osd_blurred_background_result {
+                    ctx.draw_image(
+                        &osd_blurred_background,
+                        osd_rect,
+                        InterpolationMode::Bilinear,
+                    );
+                }
+            }
+
+            ctx.fill(osd_rect, &fill_color);
+            ctx.stroke(osd_rrect.into_path(0.5), &stroke_color, 4.);
+
+            let text_point = Point::new(
+                osd_rrect.center().x - osd_size.center().x,
+                osd_rrect.center().y - osd_size.center().y,
+            );
+            ctx.draw_text(&layout, text_point);
+        });
+    }
 }
 
 impl Widget<AppState> for ContainerWidget {
@@ -52,22 +152,22 @@ impl Widget<AppState> for ContainerWidget {
         let event_sink = _ctx.get_external_handle();
 
         if let Event::Command(cmd) = _event {
-            if let Some(true) = cmd.get(REDRAW_IMAGE) {
+            if cmd.get(REDRAW_IMAGE).is_some() {
                 _ctx.request_update();
             }
         } else if let Event::KeyDown(k) = _event {
             // Key events are always handled here in the container
             if k.key == KbKey::ArrowRight {
                 event_sink
-                    .submit_command(NEXT_IMAGE, true, Target::Auto)
+                    .submit_command(NEXT_IMAGE, Instant::now(), Target::Auto)
                     .expect("Failed to send load next image command");
             } else if k.key == KbKey::ArrowLeft {
                 event_sink
-                    .submit_command(PREV_IMAGE, true, Target::Auto)
+                    .submit_command(PREV_IMAGE, Instant::now(), Target::Auto)
                     .expect("Failed to send load previous image command");
             } else if k.key == Character(String::from('o')) && k.mods == Modifiers::CONTROL {
                 event_sink
-                    .submit_command(LOAD_NEW_IMAGE, true, Target::Auto)
+                    .submit_command(LOAD_NEW_IMAGE, Instant::now(), Target::Auto)
                     .expect("Failed to send load new image command");
             }
         } else if let Event::MouseDown(e)
@@ -199,99 +299,37 @@ impl Widget<AppState> for ContainerWidget {
         let is_full_paint = if let Some(clip_rect) = final_region {
             clip_rect.width().ceil() == container_size.width.ceil()
                 && clip_rect.height().ceil() == container_size.height.ceil()
+                && region_count > 0
         } else {
-            true // Context lacks a clip region
+            false
         };
 
-        let container_alignment_offset = if cfg!(windows) { 0.01 } else { 0.0 };
-        let toolbar_blur_region_rect = druid::Rect::new(
-            0.,
-            container_size.height - data.get_toolbar_height() + container_alignment_offset,
-            container_size.width,
-            container_size.height - container_alignment_offset,
-        );
+        // Always paint background & toolbar
+        self.paint_widgets(container_size, is_full_paint, ctx, data, env);
 
-        self.image_widget.paint(ctx, data, env);
-
-        if is_full_paint && region_count > 0 {
-            let capture_result = ctx.capture_image_area(toolbar_blur_region_rect);
-            if let Ok(captured_image) = capture_result {
-                let blur_result = ctx.blur_image(&captured_image, 15.);
-                if let Ok(blurred_image) = blur_result {
-                    ctx.draw_image(
-                        &blurred_image,
-                        toolbar_blur_region_rect,
-                        InterpolationMode::Bilinear,
-                    );
-                    self.blur_cache = Some(blurred_image);
-                }
-            }
-        } else if let Some(cached_image) = &self.blur_cache {
-            ctx.draw_image(
-                cached_image,
-                toolbar_blur_region_rect,
-                InterpolationMode::Bilinear,
-            );
-        }
-
-        self.toolbar.paint(ctx, data, env);
-
+        // Paint the load button if there is no loaded image and we're not loading
         if !data.has_image() && !data.get_loading_state() {
             self.load_image_button.paint(ctx, data, env);
-        } else if data.get_loading_state() {
-            let (text_color, stroke_color, fill_color) = if data.dark_theme_enabled {
-                (
-                    Color::rgb8(255, 255, 255),
-                    Color::rgb8(29, 14, 8),
-                    Color::rgba(0.2, 0.2, 0.2, 0.5),
-                )
+        }
+        // If we're loading an image, paint the loading display
+        else if data.get_loading_state() {
+            let stroke_color = if data.dark_theme_enabled {
+                Color::rgb8(29, 14, 8)
             } else {
-                (
-                    Color::rgb8(0, 0, 0),
-                    Color::rgb8(136, 192, 208),
-                    Color::rgba(1., 1., 1., 0.5),
-                )
+                Color::rgb8(136, 192, 208)
             };
-            let text_handler = ctx.text();
-            let layout = text_handler
-                .new_text_layout("Loading...")
-                .font(FontFamily::SYSTEM_UI, 24.0)
-                .text_color(text_color)
-                .build()
-                .unwrap();
-            let text_bounds = layout.image_bounds();
-            let osd_size = text_bounds.expand().inflate(15., 15.);
-
-            let osd_rect = druid::Rect::new(
-                container_size.width / 2. - osd_size.width() / 2.,
-                (container_size.height - data.get_toolbar_height()) / 2. - osd_size.height() / 2.,
-                container_size.width / 2. + osd_size.width() / 2.,
-                (container_size.height - data.get_toolbar_height()) / 2. + osd_size.height() / 2.,
+            self.paint_osd(ctx, data, "Loading image...".to_string(), 20., stroke_color);
+        }
+        // If the current image is not able to be displayed, indicate as such
+        else if data.has_image_error() {
+            let stroke_color = Color::rgb8(235, 203, 139);
+            self.paint_osd(
+                ctx,
+                data,
+                "Error: failed to load image".to_string(),
+                20.,
+                stroke_color,
             );
-            let osd_blur_capture = ctx.capture_image_area(osd_rect);
-            if let Ok(osd_background_image) = osd_blur_capture {
-                let osd_blurred_background_result = ctx.blur_image(&osd_background_image, 30.);
-                if let Ok(osd_blurred_background) = osd_blurred_background_result {
-                    ctx.with_save(|ctx| {
-                        let osd_rrect = RoundedRect::from_rect(osd_rect, 10.0);
-                        ctx.clip(osd_rrect);
-                        ctx.draw_image(
-                            &osd_blurred_background,
-                            osd_rect,
-                            InterpolationMode::Bilinear,
-                        );
-
-                        ctx.fill(osd_rect, &fill_color);
-                        ctx.stroke(osd_rrect.into_path(0.5), &stroke_color, 4.);
-
-                        let text_point = Point::new(
-                            osd_rrect.center().x - osd_size.center().x,
-                            osd_rrect.center().y - osd_size.center().y,
-                        );
-                        ctx.draw_text(&layout, text_point);
-                    });
-                }
-            }
         }
     }
 }

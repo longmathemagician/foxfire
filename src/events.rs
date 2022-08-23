@@ -1,10 +1,12 @@
 use crate::types::*;
+use druid::Data;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Data)]
 pub struct ZoomEvent {
     delta: f64,           // The distance reported by the scroll event
     position: Vec2D<f64>, // The screen-space point of the scroll event
 }
+
 impl ZoomEvent {
     pub fn new(delta: f64, position: Vec2D<f64>) -> Self {
         ZoomEvent { delta, position }
@@ -16,13 +18,15 @@ impl ZoomEvent {
         self.position
     }
 }
-#[derive(Debug)]
+
+#[derive(Debug, Clone, Data)]
 pub struct DragEvent {
     start_pos: Vec2D<f64>,
     delta_pos: Vec2D<f64>,
     finished: bool,
     is_new: bool,
 }
+
 impl DragEvent {
     pub fn new(start_pos: Vec2D<f64>, finished: bool) -> Self {
         const ZERO_VECTOR: Vec2D<f64> = Vec2D { x: 0.0, y: 0.0 };
@@ -52,7 +56,8 @@ impl DragEvent {
         self.is_new = true
     }
 }
-#[derive(Debug)]
+
+#[derive(Debug, Clone, Data)]
 pub enum MouseEvent {
     Zoom(ZoomEvent),
     Drag(DragEvent),

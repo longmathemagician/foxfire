@@ -1,7 +1,7 @@
 use druid::{Widget, WindowId};
 
 use crate::app_state::*;
-use crate::container::*;
+use crate::container_widget::*;
 
 #[cfg(windows)]
 mod win_api_calls {

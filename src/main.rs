@@ -19,7 +19,9 @@ mod toolbar_widget;
 mod app_state;
 use app_state::*;
 
+mod osd_widget;
 mod ui_builder;
+
 use ui_builder::*;
 
 fn main() {

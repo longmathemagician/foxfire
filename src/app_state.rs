@@ -9,11 +9,11 @@ use druid::{
     Application, ClipboardFormat, Command, Data, ExtEventSink, FileDialogOptions, FileSpec,
     SingleUse, Target, WindowId,
 };
-use image::ImageOutputFormat;
+use image::{DynamicImage, ImageOutputFormat};
 
 use crate::image_container::*;
 use crate::types::{Direction, NewImageContainer};
-use crate::{IMAGE_LOAD_FAILURE, IMAGE_LOAD_SUCCESS, REDRAW_IMAGE};
+use crate::{IMAGE_LOAD_FAILURE, IMAGE_LOAD_SUCCESS, IMAGE_ROTATION_COMPLETE, REDRAW_IMAGE};
 
 #[derive(Clone, Data)]
 pub struct AppState {
@@ -23,6 +23,7 @@ pub struct AppState {
     current_image: Arc<Mutex<ImageState>>,
     command_queue: Arc<Mutex<Vec<Command>>>,
     loading_new_image: Arc<Mutex<bool>>,
+    rotating_image: Arc<Mutex<bool>>,
     current_image_index: usize,
     current_image_name: String,
     image_recenter_required: bool,
@@ -42,6 +43,7 @@ impl AppState {
             current_image: Arc::new(Mutex::new(ImageState::Empty)),
             command_queue: Arc::new(Mutex::new(vec![])),
             loading_new_image: Arc::new(Mutex::new(false)),
+            rotating_image: Arc::new(Mutex::new(false)),
             current_image_index: 0,
             current_image_name: String::new(),
             image_recenter_required: false,
@@ -209,6 +211,7 @@ impl AppState {
     }
     pub fn load_next_image(&mut self, request_timestamp: &Instant) {
         if self.image_list.len() > 0 {
+            self.set_loading_state(true);
             if self.current_image_index >= self.image_list.len() - 1 {
                 self.current_image_index = 0;
             } else {
@@ -220,6 +223,7 @@ impl AppState {
     }
     pub fn load_prev_image(&mut self, request_timestamp: &Instant) {
         if self.image_list.len() > 0 {
+            self.set_loading_state(true);
             if self.current_image_index == 0 {
                 self.current_image_index = self.image_list.len() - 1;
             } else {
@@ -257,24 +261,47 @@ impl AppState {
     }
 
     pub fn rotate_in_memory(&mut self, direction: Direction, timestamp: &Instant) {
-        let image_state_guard = self.get_image_ref();
-        let mut image_state = image_state_guard.lock().unwrap();
-
-        if let ImageState::Loaded(image_container) = &*image_state {
-            let image_ref = image_container.get_image();
-            let rotated_image = match direction {
-                Direction::Left => image_ref.rotate270(),
-                Direction::Right => image_ref.rotate90(),
-            };
-            let rotated_image_container = ImageContainer::new(rotated_image, *timestamp);
-            *image_state = ImageState::Loaded(rotated_image_container);
-            self.image_recenter_required = true;
+        if self.image_list.len() == 0 {
+            return;
         }
-        let event_sink_mutex = self.druid_event_sink.lock().unwrap();
-        let event_sink = &*event_sink_mutex;
-        event_sink
-            .submit_command(REDRAW_IMAGE, (), Target::Auto)
-            .expect("Failed to send redraw command");
+        let current_image: DynamicImage;
+        {
+            let image_state_guard = self.get_image_ref();
+            let image_state = image_state_guard.lock().unwrap();
+            if let ImageState::Loaded(image) = &*image_state {
+                current_image = image.get_image().clone();
+            } else {
+                return;
+            }
+        }
+        {
+            self.set_rotating_state(true);
+        }
+        {
+            self.redraw_widgets();
+        }
+
+        let event_sink_mutex_ref = self.druid_event_sink.clone();
+        let path_anchor = self.image_list[self.current_image_index].clone();
+        let timestamp = *timestamp;
+
+        thread::spawn(move || {
+            let event_sink_mutex = event_sink_mutex_ref.lock().unwrap();
+            let event_sink = &*event_sink_mutex;
+            let rotated_image = match direction {
+                Direction::Left => current_image.rotate270(),
+                Direction::Right => current_image.rotate90(),
+            };
+            let pth = path_anchor.to_str().unwrap().to_string();
+            let wrapper = NewImageContainer::from(pth, timestamp, rotated_image);
+            event_sink
+                .submit_command(
+                    IMAGE_ROTATION_COMPLETE,
+                    SingleUse::new(wrapper),
+                    Target::Auto,
+                )
+                .expect("Failed to send new image loaded command");
+        });
     }
 
     pub fn open_folder(&self) {
@@ -316,6 +343,15 @@ impl AppState {
         *loading_state = new_state;
     }
 
+    pub fn get_rotating_state(&self) -> bool {
+        let rotating_state = self.rotating_image.lock().unwrap();
+        *rotating_state
+    }
+    pub fn set_rotating_state(&mut self, new_state: bool) {
+        let mut rotating_state = self.rotating_image.lock().unwrap();
+        *rotating_state = new_state;
+    }
+
     pub fn show_file_load_dialog(&mut self) {
         if let Some(window_id) = self.window_id {
             let jpg = FileSpec::new(
@@ -347,5 +383,12 @@ impl AppState {
         self.set_image_list(0, Vec::new());
         self.current_image_name = String::new();
         self.image_recenter_required = false;
+    }
+
+    pub fn redraw_widgets(&mut self) {
+        let event_sink = self.druid_event_sink.lock().unwrap();
+        event_sink
+            .submit_command(REDRAW_IMAGE, (), Target::Auto)
+            .expect("Failed to send redraw command");
     }
 }

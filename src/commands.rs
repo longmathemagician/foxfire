@@ -19,6 +19,8 @@ pub const FULLSCREEN_VIEW: Selector<Instant> = Selector::new("fullscreen_view");
 
 pub const ROTATE_LEFT: Selector<Instant> = Selector::new("rotate_left");
 pub const ROTATE_RIGHT: Selector<Instant> = Selector::new("rotate_right");
+pub const IMAGE_ROTATION_COMPLETE: Selector<SingleUse<NewImageContainer>> =
+    Selector::new("image_rotated");
 
 pub const ZOOM_IMAGE: Selector<Instant> = Selector::new("zoom_image");
 pub const RECENTER_IMAGE: Selector<Instant> = Selector::new("recenter_image");
@@ -55,11 +57,9 @@ impl AppDelegate<AppState> for Delegate {
             data.image_load_failure(image_path);
             Handled::Yes
         } else if let Some(command_timestamp) = cmd.get(NEXT_IMAGE) {
-            data.set_loading_state(true);
             data.load_next_image(command_timestamp);
             Handled::Yes
         } else if let Some(command_timestamp) = cmd.get(PREV_IMAGE) {
-            data.set_loading_state(true);
             data.load_prev_image(command_timestamp);
             Handled::Yes
         } else if cmd.get(RECENTER_IMAGE).is_some() {
@@ -68,12 +68,15 @@ impl AppDelegate<AppState> for Delegate {
         } else if cmd.get(ZOOM_IMAGE).is_some() {
             Handled::Yes
         } else if let Some(command_timestamp) = cmd.get(ROTATE_LEFT) {
-            data.set_loading_state(true);
             data.rotate_in_memory(Direction::Left, command_timestamp);
-            data.set_loading_state(false);
             Handled::Yes
         } else if let Some(command_timestamp) = cmd.get(ROTATE_RIGHT) {
             data.rotate_in_memory(Direction::Right, command_timestamp);
+            Handled::Yes
+        } else if let Some(image_wrapper) = cmd.get(IMAGE_ROTATION_COMPLETE) {
+            data.set_current_image(image_wrapper.take());
+            data.set_rotating_state(false);
+            data.redraw_widgets();
             Handled::Yes
         } else if cmd.get(LOAD_NEW_IMAGE).is_some() {
             data.show_file_load_dialog();

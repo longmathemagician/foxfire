@@ -65,7 +65,16 @@ impl AppDelegate<AppState> for Delegate {
         } else if cmd.get(RECENTER_IMAGE).is_some() {
             data.set_image_center_state(true);
             Handled::Yes
+        } else if cmd.get(FULLSCREEN_VIEW).is_some() {
+            println!("Fullscreen view not yet implemented");
+            Handled::Yes
+        } else if cmd.get(DELETE_IMAGE).is_some() {
+            println!("Image deletion not yet implemented");
+
+            Handled::Yes
         } else if cmd.get(ZOOM_IMAGE).is_some() {
+            println!("Image zoom not yet implemented");
+
             Handled::Yes
         } else if let Some(command_timestamp) = cmd.get(ROTATE_LEFT) {
             data.rotate_in_memory(Direction::Left, command_timestamp);

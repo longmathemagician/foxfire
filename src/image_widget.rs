@@ -88,7 +88,12 @@ impl Widget<AppState> for ImageWidget {
                         // _ctx.set_cursor(&Cursor::Crosshair);
                         self.set_centered_state(false);
                     } else if mouse_event.button.is_right() {
-                        _ctx.show_context_menu(generate_menu(), mouse_event.pos)
+                        let has_image: bool = _data.has_image();
+                        let has_image_loaded: bool = _data.has_image() && !_data.has_image_error();
+                        _ctx.show_context_menu(
+                            generate_menu(),
+                            mouse_event.pos,
+                        )
                     }
                 }
                 _ctx.request_paint();
@@ -110,7 +115,14 @@ impl Widget<AppState> for ImageWidget {
                 }
             } else if let Event::WindowSize(_) = _event {
             }
-        }
+        } 
+        // else if let Event::MouseDown(mouse_event) = _event {
+        //     if mouse_event.button.is_right() {
+        //         let has_image: bool = _data.has_image();
+        //         let has_image_loaded: bool = _data.has_image() && !_data.has_image_error();
+        //         _ctx.show_context_menu(generate_menu(has_image, has_image_loaded), mouse_event.pos)
+        //     }
+        // }
     }
 
     fn lifecycle(
@@ -301,38 +313,58 @@ fn generate_menu() -> Menu<AppState> {
             MenuItem::new(LocalizedString::new("Open new image"))
                 .on_activate(|_ctx, data: &mut AppState, _env| data.show_file_load_dialog()),
         )
-        .entry(MenuItem::new(LocalizedString::new("Open current image with...")).enabled(false))
-        .separator()
-        .entry(
-            MenuItem::new(LocalizedString::new("Set as desktop background"))
-                .on_activate(|_ctx, data: &mut AppState, _env| data.set_as_wallpaper()),
-        )
-        .separator()
-        .entry(
-            MenuItem::new(LocalizedString::new("Open file location"))
-                .on_activate(|_ctx, data: &mut AppState, _env| data.open_folder()),
-        )
-        .separator()
-        .entry(
-            MenuItem::new(LocalizedString::new("Rotate left")).on_activate(
-                |_ctx, data: &mut AppState, _env| {
-                    data.rotate_in_memory(Direction::Left, &Instant::now())
-                },
-            ),
-        )
-        .entry(
-            MenuItem::new(LocalizedString::new("Rotate right")).on_activate(
-                |_ctx, data: &mut AppState, _env| {
-                    data.rotate_in_memory(Direction::Right, &Instant::now())
-                },
-            ),
-        )
-        .separator()
-        .entry(
-            MenuItem::new(LocalizedString::new("Copy"))
-                .on_activate(|_ctx, data: &mut AppState, _env| data.copy_image_to_clipboard()),
-        )
-        .entry(MenuItem::new(LocalizedString::new("Delete")).enabled(false))
-        .separator()
-        .entry(MenuItem::new(LocalizedString::new("Properties")).enabled(false))
+        // .entry(
+        //     MenuItem::new(LocalizedString::new("Open current image with..."))
+        //         .on_activate(|_ctx, data: &mut AppState, _env| data.open_with())
+        //         // .enabled(has_image_loaded),
+        // )
+        // .separator()
+        // .entry(
+        //     MenuItem::new(LocalizedString::new("Set as desktop background"))
+        //         .on_activate(|_ctx, data: &mut AppState, _env| data.set_as_wallpaper())
+        //         // .enabled(has_image_loaded),
+        // )
+        // .separator()
+        // .entry(
+        //     MenuItem::new(LocalizedString::new("Open file location"))
+        //         .on_activate(|_ctx, data: &mut AppState, _env| data.open_folder())
+        //         // .enabled(has_image),
+        // )
+        // .separator()
+        // .entry(
+        //     MenuItem::new(LocalizedString::new("Rotate left"))
+        //         .on_activate(|_ctx, data: &mut AppState, _env| {
+        //             data.rotate_in_memory(Direction::Left, &Instant::now())
+        //         })
+        //         // .enabled(has_image_loaded),
+        // )
+        // .entry(
+        //     MenuItem::new(LocalizedString::new("Rotate right"))
+        //         .on_activate(|_ctx, data: &mut AppState, _env| {
+        //             data.rotate_in_memory(Direction::Right, &Instant::now())
+        //         })
+        //         // .enabled(has_image_loaded),
+        // )
+        // .separator()
+        // .entry(
+        //     MenuItem::new(LocalizedString::new("Copy"))
+        //         .on_activate(|_ctx, data: &mut AppState, _env| data.copy_image_to_clipboard())
+        //         // .enabled(has_image_loaded),
+        // )
+        // .entry(
+        //     MenuItem::new(LocalizedString::new("Delete"))
+        //         .on_activate(|_ctx, data: &mut AppState, _env| data.delete_image())
+        //         // .enabled(has_image),
+        // )
+        // .separator()
+        // .entry(
+        //     MenuItem::new(LocalizedString::new("Properties"))
+        //         .on_activate(|_ctx, data: &mut AppState, _env| data.show_image_properties())
+        //         // .enabled(has_image),
+        // )
+    // .separator()
+    // .entry( // for testing only
+    //     MenuItem::new(LocalizedString::new("Close"))
+    //         .on_activate(|_ctx, data: &mut AppState, _env| data.close_current_image()),
+    // )
 }

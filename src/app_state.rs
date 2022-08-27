@@ -80,6 +80,10 @@ impl AppState {
         self.image_list = Arc::new(list);
     }
 
+    pub fn get_image_list_size(&self) -> usize {
+        self.image_list.len()
+    }
+
     pub fn startup(&mut self, path: String) {
         let current_time = Instant::now();
         let file_path_result = Path::new(&path).canonicalize();
@@ -101,6 +105,30 @@ impl AppState {
     fn parse_folder(&mut self, path: &Path) {
         let path_anchor = path.to_path_buf();
 
+        let supported_filetypes = [
+            OsStr::new("png"),
+            OsStr::new("jpg"),
+            OsStr::new("jpeg"),
+            OsStr::new("bmp"),
+            OsStr::new("ico"),
+            OsStr::new("tiff"),
+            OsStr::new("webp"),
+            OsStr::new("avif"),
+            OsStr::new("pnm"),
+            OsStr::new("dds"),
+            OsStr::new("tga"),
+            OsStr::new("exr"),
+        ];
+        let is_file_supported = |file_extension: &OsStr| {
+            for extension in supported_filetypes {
+                if file_extension.to_ascii_lowercase() == extension {
+                    return true;
+                }
+            }
+
+            false
+        };
+
         let mut files: Vec<PathBuf> = Vec::new();
         let mut current_index: usize = 0;
         let current_file_name = path_anchor.file_name();
@@ -111,15 +139,10 @@ impl AppState {
             .expect("read_dir call failed")
             .flatten()
         {
-            // TODO: Case insensitivity
-            if (entry.path().extension() == Some(OsStr::new("jpg")))
-                | (entry.path().extension() == Some(OsStr::new("jpeg")))
-                | (entry.path().extension() == Some(OsStr::new("JPG")))
-                | (entry.path().extension() == Some(OsStr::new("JPEG")))
-                | (entry.path().extension() == Some(OsStr::new("png")))
-                | (entry.path().extension() == Some(OsStr::new("PNG")))
-            {
-                files.push(entry.path());
+            if let Some(file_extension) = entry.path().extension() {
+                if is_file_supported(file_extension) {
+                    files.push(entry.path());
+                }
             }
         }
 
@@ -354,17 +377,16 @@ impl AppState {
 
     pub fn show_file_load_dialog(&mut self) {
         if let Some(window_id) = self.window_id {
-            let jpg = FileSpec::new(
-                "Joint Photographic Experts Group",
-                &["jpg", "jpeg", "JPG", "JPEG"],
-            );
-            let png = FileSpec::new("Portable Network Graphics", &["png", "PNG"]);
-            let image_file_types = FileSpec::new(
-                "Other image files",
-                &["jpg", "jpeg", "JPG", "JPEG", "png", "PNG", "bmp", "BMP"],
+            let common_image_files = FileSpec::new(
+                "Common image files",
+                &[
+                    "png", "PNG", "jpg", "jpeg", "JPG", "JPEG", "bmp", "BMP", "ico", "ICO", "tiff",
+                    "TIFF", "webp", "WEBP", "avif", "AVIF", "pnm", "PNM", "dds", "DDS", "tga",
+                    "TGA", "exr", "EXR",
+                ],
             );
             let options = FileDialogOptions::new()
-                .allowed_types(vec![jpg, png, image_file_types])
+                .allowed_types(vec![common_image_files])
                 .name_label("Image")
                 .title("Choose an image to load")
                 .button_text("Load");
@@ -390,5 +412,17 @@ impl AppState {
         event_sink
             .submit_command(REDRAW_IMAGE, (), Target::Auto)
             .expect("Failed to send redraw command");
+    }
+
+    pub fn delete_image(&mut self) {
+        // todo!()
+    }
+
+    pub fn open_with(&self) {
+        // todo!()
+    }
+
+    pub fn show_image_properties(&self) {
+        // todo!()
     }
 }

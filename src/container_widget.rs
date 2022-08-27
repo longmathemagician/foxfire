@@ -5,7 +5,7 @@ use std::time::Instant;
 
 use druid::widget::prelude::*;
 
-use druid::{Color, Rect, WidgetPod};
+use druid::{Color, Rect, Vec2, WidgetPod};
 use druid::{KbKey, Point, Target};
 use druid::{Modifiers, Size};
 
@@ -56,7 +56,7 @@ impl ContainerWidget {
                 }
             }
         });
-        
+
         self.osd_widget.paint(ctx, data, env);
     }
 }
@@ -97,7 +97,10 @@ impl Widget<AppState> for ContainerWidget {
             if e.window_pos.y < _ctx.size().height - _data.get_toolbar_height() {
                 _ctx.set_focus(self.image_widget.id());
                 self.image_widget.event(_ctx, _event, _data, _env);
-                _data.set_image_center_state(false);
+
+                if e.button.is_left() || e.wheel_delta != Vec2::ZERO {
+                    _data.set_image_center_state(false);
+                }
             } else {
                 _ctx.set_focus(self.toolbar_widget.id());
                 self.toolbar_widget.event(_ctx, _event, _data, _env);
@@ -132,6 +135,8 @@ impl Widget<AppState> for ContainerWidget {
     }
 
     fn update(&mut self, _ctx: &mut UpdateCtx, _old_data: &AppState, _data: &AppState, _env: &Env) {
+        self.toolbar_widget.update(_ctx, _data, _env);
+
         let mut needs_paint = true; // repaint on all updates, for now
 
         if _data.get_image_center_state() && !_old_data.get_image_center_state() {

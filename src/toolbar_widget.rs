@@ -1,11 +1,12 @@
 use crate::app_state::AppState;
 use crate::button_widget::*;
+use crate::commands::{
+    DELETE_IMAGE, NEXT_IMAGE, PREV_IMAGE, RECENTER_IMAGE, ROTATE_LEFT, ROTATE_RIGHT,
+};
 use druid::widget::prelude::*;
 use druid::widget::Svg;
 use druid::widget::SvgData;
 use druid::{Color, Point, WidgetPod};
-
-use crate::{NEXT_IMAGE, PREV_IMAGE, RECENTER_IMAGE, ROTATE_LEFT, ROTATE_RIGHT};
 
 pub struct ToolbarWidget {
     buttons: Vec<WidgetPod<bool, ThemedButton>>,
@@ -102,7 +103,7 @@ impl ToolbarWidget {
         buttons.push(rot_r_button);
 
         let delete_button = WidgetPod::new(ThemedButton::new(
-            None,
+            Some(DELETE_IMAGE),
             Size::new(32., 32.),
             Point::new(8. - (68. + 3. * 32. + 4. * 4.), 16.),
             include_str!("../resources/buttons/del/button.svg"),

@@ -27,7 +27,7 @@ pub struct AppState {
     current_image_index: usize,
     current_image_name: String,
     image_recenter_required: bool,
-    image_list: Arc<Vec<PathBuf>>,
+    image_list: Arc<Mutex<Vec<PathBuf>>>,
     druid_event_sink: Arc<Mutex<ExtEventSink>>,
     pub dark_theme_enabled: bool,
 }
@@ -47,7 +47,7 @@ impl AppState {
             current_image_index: 0,
             current_image_name: String::new(),
             image_recenter_required: false,
-            image_list: Arc::new(Vec::new()),
+            image_list: Arc::new(Mutex::new(Vec::new())),
             druid_event_sink: Arc::new(Mutex::new(event_sink)),
             dark_theme_enabled,
         }
@@ -77,11 +77,13 @@ impl AppState {
     }
     pub fn set_image_list(&mut self, index: usize, list: Vec<PathBuf>) {
         self.current_image_index = index;
-        self.image_list = Arc::new(list);
+        self.image_list = Arc::new(Mutex::new(list));
     }
 
     pub fn get_image_list_size(&self) -> usize {
-        self.image_list.len()
+        let image_list_guard = &self.image_list;
+        let image_list = image_list_guard.lock().unwrap();
+        image_list.len()
     }
 
     pub fn startup(&mut self, path: String) {
@@ -94,7 +96,13 @@ impl AppState {
                 self.parse_folder(&file_path);
             } else if file_path.is_dir() {
                 self.parse_folder(&file_path);
-                let first_image = self.image_list[0].clone();
+
+                let first_image: PathBuf;
+                {
+                    let image_list_guard = &self.image_list;
+                    let image_list = image_list_guard.lock().unwrap();
+                    first_image = image_list[0].clone();
+                }
                 self.load_image(&first_image, &current_time);
             }
         } else {
@@ -233,26 +241,36 @@ impl AppState {
         80.0
     }
     pub fn load_next_image(&mut self, request_timestamp: &Instant) {
-        if self.image_list.len() > 0 {
+        if self.get_image_list_size() > 0 {
             self.set_loading_state(true);
-            if self.current_image_index >= self.image_list.len() - 1 {
+            if self.current_image_index >= self.get_image_list_size() - 1 {
                 self.current_image_index = 0;
             } else {
                 self.current_image_index += 1;
             }
-            let next_image_path = self.image_list[self.current_image_index].clone();
+            let next_image_path: PathBuf;
+            {
+                let image_list_guard = &self.image_list;
+                let image_list = image_list_guard.lock().unwrap();
+                next_image_path = image_list[self.current_image_index].clone();
+            }
             self.load_image(&next_image_path, request_timestamp);
         }
     }
     pub fn load_prev_image(&mut self, request_timestamp: &Instant) {
-        if self.image_list.len() > 0 {
+        if self.get_image_list_size() > 0 {
             self.set_loading_state(true);
             if self.current_image_index == 0 {
-                self.current_image_index = self.image_list.len() - 1;
+                self.current_image_index = self.get_image_list_size() - 1;
             } else {
                 self.current_image_index -= 1;
             }
-            let previous_image_path = self.image_list[self.current_image_index].clone();
+            let previous_image_path: PathBuf;
+            {
+                let image_list_guard = &self.image_list;
+                let image_list = image_list_guard.lock().unwrap();
+                previous_image_path = image_list[self.current_image_index].clone();
+            }
             self.load_image(&previous_image_path, request_timestamp);
         }
     }
@@ -279,12 +297,13 @@ impl AppState {
             Ok(())
         }
 
-        let _result =
-            set_as_wallpaper_helper(self.image_list[self.current_image_index].to_path_buf());
+        let image_list_guard = &self.image_list;
+        let image_list = image_list_guard.lock().unwrap();
+        let _result = set_as_wallpaper_helper(image_list[self.current_image_index].to_path_buf());
     }
 
     pub fn rotate_in_memory(&mut self, direction: Direction, timestamp: &Instant) {
-        if self.image_list.len() == 0 {
+        if self.get_image_list_size() == 0 {
             return;
         }
         let current_image: DynamicImage;
@@ -305,7 +324,9 @@ impl AppState {
         }
 
         let event_sink_mutex_ref = self.druid_event_sink.clone();
-        let path_anchor = self.image_list[self.current_image_index].clone();
+        let image_list_guard = &self.image_list;
+        let image_list = image_list_guard.lock().unwrap();
+        let path_anchor = image_list[self.current_image_index].clone();
         let timestamp = *timestamp;
 
         thread::spawn(move || {
@@ -325,17 +346,6 @@ impl AppState {
                 )
                 .expect("Failed to send new image loaded command");
         });
-    }
-
-    pub fn open_folder(&self) {
-        opener::open(
-            &self.image_list[self.current_image_index]
-                .clone()
-                .parent()
-                .unwrap()
-                .as_os_str(),
-        )
-        .expect("Could not open image location.");
     }
 
     pub fn copy_image_to_clipboard(&self) {
@@ -414,15 +424,59 @@ impl AppState {
             .expect("Failed to send redraw command");
     }
 
+    pub fn show_fullscreen_slideshow(&mut self) {
+        todo!()
+    }
+
     pub fn delete_image(&mut self) {
-        // todo!()
+        if self.has_image() {
+            let path: PathBuf;
+            {
+                let image_list_guard = &self.image_list;
+                let image_list = image_list_guard.lock().unwrap();
+                path = image_list[self.current_image_index].to_path_buf();
+            }
+            let result = trash::delete(path);
+            if result.is_ok() {
+                if self.get_image_list_size() > 1 {
+                    {
+                        let deleted_image_index = self.current_image_index;
+                        let image_list_guard = &self.image_list;
+                        let mut image_list = image_list_guard.lock().unwrap();
+                        image_list.remove(deleted_image_index);
+                    }
+                    self.load_prev_image(&Instant::now());
+                } else {
+                    self.close_current_image();
+                }
+            }
+        }
     }
 
     pub fn open_with(&self) {
-        // todo!()
+        if self.has_image() {
+            let image_list_guard = &self.image_list;
+            let image_list = image_list_guard.lock().unwrap();
+            let path = image_list[self.current_image_index].to_path_buf();
+            let _result = open_with::open_with(path);
+        }
+    }
+
+    pub fn open_folder(&self) {
+        if self.has_image() {
+            let image_list_guard = &self.image_list;
+            let image_list = image_list_guard.lock().unwrap();
+            let path = image_list[self.current_image_index].to_path_buf();
+            let _result = open_with::open_folder(path);
+        }
     }
 
     pub fn show_image_properties(&self) {
-        // todo!()
+        if self.has_image() {
+            let image_list_guard = &self.image_list;
+            let image_list = image_list_guard.lock().unwrap();
+            let path = image_list[self.current_image_index].to_path_buf();
+            let _result = properties::show(path);
+        }
     }
 }

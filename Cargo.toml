@@ -1,7 +1,7 @@
 [package]
 name = "foxfire"
 description = "A simple photo viewer."
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Abelian Dynamics"]
 edition = "2021"
 build = "build.rs"
@@ -17,11 +17,13 @@ codegen-units = 1
 panic = "abort"
 
 [dependencies]
+open_with = { path = "dependencies/open_with" }
+properties = { path = "dependencies/properties" }
+trash = "2.1.5"
 image = "0.24.2"
 druid = { git = "https://github.com/longmathemagician/druid.git", features = ["im", "svg"] }
 dark-light = "0.2.2"
 wallpaper = "3.2.0"
-opener = "0.5.0"
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1"
@@ -40,6 +42,8 @@ name = "Foxfire"
 identifier = "com.abeliandynamics.foxfire"
 icon = ["resources/icons/32x32.png", "resources/icons/128x128.png", "resources/icons/128x128@2x.png"]
 category = "public.app-category.graphics-design"
+linux_exec_args = "%f"
+linux_mime_types = ["image/png", "image/jpeg", "image/bmp"]
 short_description = "Photo viewer."
 long_description = """
 Foxfire is a minimalist photo viewer, written in Rust using the

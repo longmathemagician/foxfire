@@ -66,11 +66,10 @@ impl AppDelegate<AppState> for Delegate {
             data.set_image_center_state(true);
             Handled::Yes
         } else if cmd.get(FULLSCREEN_VIEW).is_some() {
-            println!("Fullscreen view not yet implemented");
+            data.show_fullscreen_slideshow();
             Handled::Yes
         } else if cmd.get(DELETE_IMAGE).is_some() {
-            println!("Image deletion not yet implemented");
-
+            data.delete_image();
             Handled::Yes
         } else if cmd.get(ZOOM_IMAGE).is_some() {
             println!("Image zoom not yet implemented");

@@ -4,3 +4,6 @@
 [submodule "dependencies/piet"]
 	path = dependencies/piet
 	url = https://github.com/longmathemagician/piet
+[submodule "dependencies/open_with"]
+	path = dependencies/open_with
+	url = https://github.com/longmathemagician/open_with.git

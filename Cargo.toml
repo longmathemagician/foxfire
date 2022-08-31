@@ -18,7 +18,6 @@ panic = "abort"
 
 [dependencies]
 open_with = { path = "dependencies/open_with" }
-properties = { path = "dependencies/properties" }
 trash = "2.1.5"
 image = "0.24.2"
 druid = { git = "https://github.com/longmathemagician/druid.git", features = ["im", "svg"] }

@@ -467,7 +467,7 @@ impl AppState {
             let image_list_guard = &self.image_list;
             let image_list = image_list_guard.lock().unwrap();
             let path = image_list[self.current_image_index].to_path_buf();
-            let _result = open_with::open_folder(path);
+            let _result = open_with::show_in_folder(path);
         }
     }
 
@@ -476,7 +476,7 @@ impl AppState {
             let image_list_guard = &self.image_list;
             let image_list = image_list_guard.lock().unwrap();
             let path = image_list[self.current_image_index].to_path_buf();
-            let _result = properties::show(path);
+            let _result = open_with::show_properties(path);
         }
     }
 }

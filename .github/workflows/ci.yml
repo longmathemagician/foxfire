@@ -1,0 +1,40 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Install dependencies
+      run: |
+        sudo apt install libgtk-3-dev -y
+        cargo install cargo-bundle
+    - name: Checkout
+      uses: actions/checkout@v3
+      with: 
+        submodules: 'true'
+        fetch-depth: 0
+    - name: Set release tag
+      id: tag
+      run: |
+        export VERSION=$(git rev-list HEAD --count)
+        sed -i "s/0.0.0/0.1.$VERSION/g" Cargo.toml
+        echo "::set-output name=release_tag::v0.1.${VERSION}"
+    - name: Build release bundle
+      run: cargo bundle --release
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.FOXFIRE_RELEASE_TOKEN }}
+      with:
+        tag_name: ${{ steps.tag.outputs.release_tag }}
+        files: |
+          /home/runner/work/${{ github.event.repository.name }}/${{ github.event.repository.name }}/target/release/bundle/deb/*.deb

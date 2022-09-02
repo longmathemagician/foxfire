@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -10,10 +11,16 @@ use druid::{
     SingleUse, Target, WindowId,
 };
 use image::{DynamicImage, ImageOutputFormat};
+use preferences::{AppInfo, Preferences, PreferencesMap};
 
 use crate::image_container::*;
 use crate::types::{Direction, NewImageContainer};
 use crate::{IMAGE_LOAD_FAILURE, IMAGE_LOAD_SUCCESS, IMAGE_ROTATION_COMPLETE, REDRAW_IMAGE};
+
+const APP_SIG: AppInfo = AppInfo {
+    name: env!("CARGO_PKG_NAME"),
+    author: env!("CARGO_PKG_AUTHORS"),
+};
 
 #[derive(Clone, Data)]
 pub struct AppState {
@@ -500,8 +507,34 @@ impl AppState {
         self.filtering_enabled
     }
 
+    pub fn load_prefs(&mut self) {
+        let key = "preferences";
+        let result = HashMap::<String, bool>::load(&APP_SIG, key);
+
+        if let Ok(preferences) = result {
+            preferences
+                .get("blur_enabled")
+                .map(|b| self.blur_enabled = *b);
+
+            preferences
+                .get("image_filtering_enabled")
+                .map(|f| self.filtering_enabled = *f);
+        }
+    }
+
+    pub fn save_prefs(&self) {
+        let mut preferences: HashMap<String, bool> = PreferencesMap::new();
+
+        preferences.insert("blur_enabled".into(), self.blur_enabled);
+        preferences.insert("image_filtering_enabled".into(), self.filtering_enabled);
+
+        let key = "preferences";
+        let _result = preferences.save(&APP_SIG, key);
+    }
+
     pub fn exit(&mut self) {
         self.close_current_image();
+        self.save_prefs();
         Application::global().quit()
     }
 }

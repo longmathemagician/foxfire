@@ -48,6 +48,7 @@ fn main() {
     };
     let mut initial_state = AppState::from(theme_state, launcher.get_external_handle());
     initial_state.startup(file_name);
+    initial_state.load_prefs();
 
     // Launch program
     launcher

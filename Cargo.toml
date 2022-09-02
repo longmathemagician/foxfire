@@ -23,6 +23,7 @@ image = "0.24.2"
 druid = { git = "https://github.com/longmathemagician/druid.git", features = ["im", "svg"] }
 dark-light = "0.2.2"
 wallpaper = "3.2.0"
+preferences = "1.1.0"
 
 [target.'cfg(windows)'.build-dependencies]
 winres = "0.1"

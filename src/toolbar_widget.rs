@@ -254,7 +254,7 @@ impl Widget<AppState> for ToolbarWidget {
 }
 
 fn generate_menu(data: &AppState) -> Menu<AppState> {
-    const ABOUT_STR: & str = concat!("Foxfire v", env!("CARGO_PKG_VERSION"));
+    const ABOUT_STR: &str = concat!("Foxfire v", env!("CARGO_PKG_VERSION"));
     let blur_state = data.blur_enabled();
     let filtering_state = data.image_filtering_enabled();
     Menu::empty()

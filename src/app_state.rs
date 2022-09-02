@@ -206,27 +206,33 @@ impl AppState {
     }
     pub fn set_current_image(&mut self, container_wrapper: Option<NewImageContainer>) {
         if let Some(wrapper) = container_wrapper {
+            let mut loaded_new_image: bool = false;
             {
                 let mut image_guard = self.current_image.lock().unwrap();
 
                 if let ImageState::Empty | ImageState::Error(_) = *image_guard {
                     let new_image = ImageContainer::new(wrapper.image, wrapper.timestamp);
                     *image_guard = ImageState::Loaded(new_image);
+                    loaded_new_image = true;
                 } else if let ImageState::Loaded(current_image) = &*image_guard {
                     if current_image.get_timestamp() < &wrapper.timestamp {
                         let new_image = ImageContainer::new(wrapper.image, wrapper.timestamp);
                         *image_guard = ImageState::Loaded(new_image);
+                        loaded_new_image = true;
                     }
                 }
             }
-            let image_name = Path::new(&wrapper.path)
-                .file_name()
-                .unwrap()
-                .to_os_string()
-                .into_string()
-                .unwrap();
-            self.set_current_image_name(image_name);
-            self.image_recenter_required = true;
+
+            if loaded_new_image {
+                let image_name = Path::new(&wrapper.path)
+                    .file_name()
+                    .unwrap()
+                    .to_os_string()
+                    .into_string()
+                    .unwrap();
+                self.set_current_image_name(image_name);
+                self.image_recenter_required = true;
+            }
         }
     }
     pub fn image_load_failure(&mut self, image_path: &PathBuf) {

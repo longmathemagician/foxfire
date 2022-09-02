@@ -5,11 +5,13 @@ use crate::types::{Direction, NewImageContainer};
 use crate::{platform_api_calls, AppState};
 use druid::commands::OPEN_FILE;
 use druid::{
-    AppDelegate, Application, Command, DelegateCtx, Env, Handled, Selector, SingleUse, Target,
-    WindowHandle, WindowId,
+    AppDelegate, Command, DelegateCtx, Env, Handled, Selector, SingleUse, Target, WindowHandle,
+    WindowId,
 };
 
 pub const REDRAW_IMAGE: Selector<()> = Selector::new("redraw_image");
+
+pub const TOGGLE_BLUR: Selector<()> = Selector::new("toggle_blur");
 
 pub const IMAGE_LOAD_FAILURE: Selector<PathBuf> = Selector::new("image_load_failure");
 pub const IMAGE_LOAD_SUCCESS: Selector<SingleUse<NewImageContainer>> =
@@ -100,6 +102,9 @@ impl AppDelegate<AppState> for Delegate {
             }
 
             Handled::Yes
+        } else if cmd.get(TOGGLE_BLUR).is_some() {
+            data.blur_enable_toggle();
+            Handled::Yes
         } else {
             Handled::No
         }
@@ -109,22 +114,21 @@ impl AppDelegate<AppState> for Delegate {
         &mut self,
         id: WindowId,
         _handle: WindowHandle,
-        _data: &mut AppState,
+        data: &mut AppState,
         _env: &Env,
         _ctx: &mut DelegateCtx,
     ) {
         platform_api_calls(id);
-        _data.set_window_id(id);
+        data.set_window_id(id);
     }
 
     fn window_removed(
         &mut self,
         _id: WindowId,
-        _data: &mut AppState,
+        data: &mut AppState,
         _env: &Env,
         _ctx: &mut DelegateCtx,
     ) {
-        _data.close_current_image();
-        Application::global().quit()
+        data.exit();
     }
 }

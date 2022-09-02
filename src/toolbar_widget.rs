@@ -3,16 +3,18 @@ use crate::button_widget::*;
 use crate::commands::{
     DELETE_IMAGE, NEXT_IMAGE, PREV_IMAGE, RECENTER_IMAGE, ROTATE_LEFT, ROTATE_RIGHT,
 };
+use crate::{FULLSCREEN_VIEW, TOGGLE_BLUR};
 use druid::widget::prelude::*;
 use druid::widget::Svg;
 use druid::widget::SvgData;
-use druid::{Color, Point, WidgetPod};
+use druid::{Color, LocalizedString, Menu, MenuItem, Point, WidgetPod};
 
 pub struct ToolbarWidget {
     buttons: Vec<WidgetPod<bool, ThemedButton>>,
     controls_outline: WidgetPod<bool, Svg>,
     controls_outline_dark: WidgetPod<bool, Svg>,
 }
+
 impl ToolbarWidget {
     pub fn new() -> Self {
         // Load button data
@@ -55,7 +57,7 @@ impl ToolbarWidget {
         buttons.push(prev_button);
 
         let fullscreen_button = WidgetPod::new(ThemedButton::new(
-            None,
+            Some(FULLSCREEN_VIEW),
             Size::new(64., 64.),
             Point::new(32., 32.),
             include_str!("../resources/buttons/fullscreen/button.svg"),
@@ -131,10 +133,18 @@ impl ToolbarWidget {
 }
 
 impl Widget<AppState> for ToolbarWidget {
-    fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut AppState, _env: &Env) {
+    fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut AppState, env: &Env) {
         // Pass events to buttons
         for button in self.buttons.iter_mut() {
-            button.event(_ctx, _event, &mut false, _env);
+            button.event(ctx, event, &mut false, env);
+        }
+        if !ctx.is_handled() {
+            if let Event::MouseDown(mouse_event) = event {
+                if mouse_event.button.is_right() {
+                    let context_menu = generate_menu(data);
+                    ctx.show_context_menu(context_menu, mouse_event.pos)
+                }
+            }
         }
     }
 
@@ -241,4 +251,31 @@ impl Widget<AppState> for ToolbarWidget {
             button.paint(ctx, &false, env);
         }
     }
+}
+
+fn generate_menu(data: &AppState) -> Menu<AppState> {
+    const ABOUT_STR: & str = concat!("Foxfire v", env!("CARGO_PKG_VERSION"));
+    let blur_state = data.blur_enabled();
+    let filtering_state = data.image_filtering_enabled();
+    Menu::empty()
+        .entry(MenuItem::new(LocalizedString::new(ABOUT_STR)).enabled(false))
+        .separator()
+        .entry(
+            MenuItem::new(LocalizedString::new("Enable blur effects"))
+                .selected(blur_state)
+                .command(TOGGLE_BLUR)
+                .on_activate(|_ctx, data: &mut AppState, _env| data.blur_enable_toggle()),
+        )
+        .entry(
+            MenuItem::new(LocalizedString::new("Enable bilinear filtering"))
+                .selected(filtering_state)
+                .on_activate(|_ctx, data: &mut AppState, _env| {
+                    data.image_filtering_enable_toggle()
+                }),
+        )
+        .separator()
+        .entry(
+            MenuItem::new(LocalizedString::new("Quit"))
+                .on_activate(|_ctx, data: &mut AppState, _env| data.exit()),
+        )
 }

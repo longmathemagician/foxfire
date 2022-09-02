@@ -16,6 +16,7 @@ pub struct ThemedButton {
     is_pressed: bool,
     is_enabled: bool,
 }
+
 impl ThemedButton {
     pub fn new(
         command: Option<Selector<Instant>>,
@@ -51,13 +52,18 @@ impl ThemedButton {
         self.is_enabled = false;
     }
 }
+
 impl Widget<bool> for ThemedButton {
-    fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut bool, _env: &Env) {
+    fn event(&mut self, ctx: &mut EventCtx, event: &Event, _data: &mut bool, _env: &Env) {
         if !self.is_enabled {
             return;
         }
+
+        let mut event_handled = false;
+        let mut needs_repaint = false;
+
         if let Some(command) = self.command {
-            if let Event::MouseMove(e) = _event {
+            if let Event::MouseMove(e) = event {
                 let mut x = e.pos.x as usize;
                 x = if x > (self.size.width - 1.) as usize {
                     (self.size.width - 1.) as usize
@@ -74,47 +80,64 @@ impl Widget<bool> for ThemedButton {
                 if self.mask[y * ((self.size.width - 1.) as usize) + x] == 1 {
                     if !self.is_hot {
                         self.is_hot = true;
-                        _ctx.request_paint();
+
+                        event_handled = true;
+                        needs_repaint = true;
                     }
                 } else if self.is_hot {
                     self.is_hot = false;
-                    _ctx.request_paint();
+
+                    event_handled = true;
+                    needs_repaint = true;
                 }
             }
             if self.is_hot {
-                if let Event::MouseDown(m) = _event {
+                if let Event::MouseDown(m) = event {
+                    event_handled = true;
                     if m.button == MouseButton::Left {
                         self.is_pressed = true;
-                        _ctx.request_paint();
+
+                        needs_repaint = true;
                     }
-                } else if let Event::MouseUp(m) = _event {
+                } else if let Event::MouseUp(m) = event {
+                    event_handled = true;
                     if m.button == MouseButton::Left && self.is_pressed {
-                        let event_sink = _ctx.get_external_handle();
+                        let event_sink = ctx.get_external_handle();
                         event_sink
                             .submit_command(command, Instant::now(), Target::Auto)
                             .expect("Failed to send command");
                         self.is_pressed = false;
-                        _ctx.request_paint();
+
+                        needs_repaint = true;
                     }
                 }
             } else if self.is_pressed {
                 self.is_pressed = false;
+
+                event_handled = true;
             }
+        }
+
+        if event_handled {
+            ctx.set_handled()
+        }
+        if needs_repaint {
+            ctx.request_paint()
         }
     }
 
-    fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle, _data: &bool, _env: &Env) {
-        if let LifeCycle::WidgetAdded = _event {
-            self.image.lifecycle(_ctx, _event, _data, _env);
-            self.image_hot.lifecycle(_ctx, _event, _data, _env);
-            self.image_active.lifecycle(_ctx, _event, _data, _env);
-            self.image_disabled.lifecycle(_ctx, _event, _data, _env);
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, data: &bool, env: &Env) {
+        if let LifeCycle::WidgetAdded = event {
+            self.image.lifecycle(ctx, event, data, env);
+            self.image_hot.lifecycle(ctx, event, data, env);
+            self.image_active.lifecycle(ctx, event, data, env);
+            self.image_disabled.lifecycle(ctx, event, data, env);
         }
-        if let LifeCycle::FocusChanged(_) | LifeCycle::HotChanged(_) = _event {
-            if !_ctx.is_active() || !_ctx.is_hot() {
+        if let LifeCycle::FocusChanged(_) | LifeCycle::HotChanged(_) = event {
+            if !ctx.is_active() || !ctx.is_hot() {
                 self.is_hot = false;
             }
-            _ctx.request_paint();
+            ctx.request_paint();
         }
     }
 
@@ -122,18 +145,17 @@ impl Widget<bool> for ThemedButton {
 
     fn layout(
         &mut self,
-        _layout_ctx: &mut LayoutCtx,
+        layout_ctx: &mut LayoutCtx,
         bc: &BoxConstraints,
-        _data: &bool,
-        _env: &Env,
+        data: &bool,
+        env: &Env,
     ) -> Size {
-        self.image.layout(_layout_ctx, &bc.loosen(), _data, _env);
-        self.image_hot
-            .layout(_layout_ctx, &bc.loosen(), _data, _env);
+        self.image.layout(layout_ctx, &bc.loosen(), data, env);
+        self.image_hot.layout(layout_ctx, &bc.loosen(), data, env);
         self.image_active
-            .layout(_layout_ctx, &bc.loosen(), _data, _env);
+            .layout(layout_ctx, &bc.loosen(), data, env);
         self.image_disabled
-            .layout(_layout_ctx, &bc.loosen(), _data, _env);
+            .layout(layout_ctx, &bc.loosen(), data, env);
         self.size
     }
 

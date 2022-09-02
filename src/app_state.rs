@@ -30,6 +30,8 @@ pub struct AppState {
     image_list: Arc<Mutex<Vec<PathBuf>>>,
     druid_event_sink: Arc<Mutex<ExtEventSink>>,
     pub dark_theme_enabled: bool,
+    blur_enabled: bool,
+    filtering_enabled: bool,
 }
 
 impl AppState {
@@ -50,6 +52,8 @@ impl AppState {
             image_list: Arc::new(Mutex::new(Vec::new())),
             druid_event_sink: Arc::new(Mutex::new(event_sink)),
             dark_theme_enabled,
+            blur_enabled: true,
+            filtering_enabled: false,
         }
     }
 
@@ -478,5 +482,26 @@ impl AppState {
             let path = image_list[self.current_image_index].to_path_buf();
             let _result = open_with::show_properties(path);
         }
+    }
+
+    pub fn blur_enabled(&self) -> bool {
+        self.blur_enabled
+    }
+
+    pub fn blur_enable_toggle(&mut self) {
+        self.blur_enabled ^= true;
+    }
+
+    pub fn image_filtering_enable_toggle(&mut self) {
+        self.filtering_enabled ^= true;
+    }
+
+    pub fn image_filtering_enabled(&self) -> bool {
+        self.filtering_enabled
+    }
+
+    pub fn exit(&mut self) {
+        self.close_current_image();
+        Application::global().quit()
     }
 }

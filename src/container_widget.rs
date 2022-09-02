@@ -35,7 +35,7 @@ impl ContainerWidget {
         }
     }
 
-    fn paint_osd(&mut self, ctx: &mut PaintCtx, data: &AppState, env: &Env) {
+    fn paint_osd_blur(&mut self, ctx: &mut PaintCtx, data: &AppState, env: &Env) {
         let mut container_size = ctx.size();
         container_size.height -= data.get_toolbar_height();
         let container_rect = container_size.to_rect().inset(11.);
@@ -225,25 +225,27 @@ impl Widget<AppState> for ContainerWidget {
 
         self.image_widget.paint(ctx, data, env);
 
-        if is_full_paint {
-            let capture_result = ctx.capture_image_area(toolbar_blur_region_rect);
-            if let Ok(captured_image) = capture_result {
-                let blur_result = ctx.blur_image(&captured_image, 15.);
-                if let Ok(blurred_image) = blur_result {
-                    ctx.draw_image(
-                        &blurred_image,
-                        toolbar_blur_region_rect,
-                        InterpolationMode::Bilinear,
-                    );
-                    self.blur_cache = Some(blurred_image);
+        if data.blur_enabled() {
+            if is_full_paint {
+                let capture_result = ctx.capture_image_area(toolbar_blur_region_rect);
+                if let Ok(captured_image) = capture_result {
+                    let blur_result = ctx.blur_image(&captured_image, 15.);
+                    if let Ok(blurred_image) = blur_result {
+                        ctx.draw_image(
+                            &blurred_image,
+                            toolbar_blur_region_rect,
+                            InterpolationMode::Bilinear,
+                        );
+                        self.blur_cache = Some(blurred_image);
+                    }
                 }
+            } else if let Some(cached_image) = &self.blur_cache {
+                ctx.draw_image(
+                    cached_image,
+                    toolbar_blur_region_rect,
+                    InterpolationMode::Bilinear,
+                );
             }
-        } else if let Some(cached_image) = &self.blur_cache {
-            ctx.draw_image(
-                cached_image,
-                toolbar_blur_region_rect,
-                InterpolationMode::Bilinear,
-            );
         }
 
         self.toolbar_widget.paint(ctx, data, env);
@@ -258,7 +260,9 @@ impl Widget<AppState> for ContainerWidget {
                 stroke_color,
             );
             self.osd_widget.widget_mut().set_payload(load_file_payload);
-            self.paint_osd(ctx, data, env);
+            if data.blur_enabled() {
+                self.paint_osd_blur(ctx, data, env)
+            }
         }
         // If we're loading an image, paint the loading display
         else if data.get_loading_state() {
@@ -266,7 +270,9 @@ impl Widget<AppState> for ContainerWidget {
             let load_file_payload =
                 OSDPayload::new(None, "Loading image...".to_string(), 20., stroke_color);
             self.osd_widget.widget_mut().set_payload(load_file_payload);
-            self.paint_osd(ctx, data, env);
+            if data.blur_enabled() {
+                self.paint_osd_blur(ctx, data, env)
+            }
         }
         // If the current image is in the process of being rotated, indicate it
         else if data.get_rotating_state() {
@@ -274,7 +280,9 @@ impl Widget<AppState> for ContainerWidget {
             let load_file_payload =
                 OSDPayload::new(None, "Rotating image...".to_string(), 20., stroke_color);
             self.osd_widget.widget_mut().set_payload(load_file_payload);
-            self.paint_osd(ctx, data, env);
+            if data.blur_enabled() {
+                self.paint_osd_blur(ctx, data, env)
+            }
         }
         // If the current image is not able to be displayed, indicate as such
         else if data.has_image_error() {
@@ -286,7 +294,9 @@ impl Widget<AppState> for ContainerWidget {
                 stroke_color,
             );
             self.osd_widget.widget_mut().set_payload(load_file_payload);
-            self.paint_osd(ctx, data, env);
+            if data.blur_enabled() {
+                self.paint_osd_blur(ctx, data, env)
+            }
         }
     }
 }

@@ -294,11 +294,16 @@ impl Widget<AppState> for ImageWidget {
                 image_corner_screenspace.y,
             );
             self.transform = Some(image_transform);
+
+            let interpolation_mode = match data.image_filtering_enabled() {
+                true => InterpolationMode::Bilinear,
+                _ => InterpolationMode::NearestNeighbor,
+            };
             ctx.draw_image_area(
                 image_container.get_cache().unwrap(),
                 image_viewport,
                 container_viewport,
-                InterpolationMode::NearestNeighbor,
+                interpolation_mode,
             );
         }
     }

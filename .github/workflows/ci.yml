@@ -1,0 +1,106 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  release:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macOS-latest, windows-latest, ubuntu-latest]
+
+    steps:
+    - name: Install dependencies (linux)
+      run: |
+        sudo apt install libgtk-3-dev -y
+      if: contains(matrix.os, 'ubuntu')
+
+    - name: Install dependencies (cargo)
+      run: |
+        cargo install cargo-bundle
+
+    - name: Checkout
+      uses: actions/checkout@v3
+      with: 
+        submodules: 'true'
+        fetch-depth: 0
+
+    - name: Generate release version
+      id: version
+      shell: bash
+      run: |
+        echo "::set-output name=git::0.1.$(git rev-list HEAD --count)"
+
+    - name: Set release tag
+      id: tag
+      shell: bash
+      run: |
+        echo "::set-output name=release_tag::v${{ steps.version.outputs.git }}"
+
+    - name: Patch cargo version (macOS)
+      run: |
+        cat Cargo.toml | sed "s/0.0.0/${{ steps.version.outputs.git }}/g" > Cargo.version && mv cargo.version cargo.toml
+      if: contains(matrix.os, 'mac')
+    - name: Patch cargo version (linux)
+      run: |
+        sed -i "s/0.0.0/${{ steps.version.outputs.git }}/g" Cargo.toml
+      if: contains(matrix.os, 'ubuntu')
+    - name: Patch cargo version (windows)
+      shell: bash
+      run: |
+        sed -i "s/0.0.0/${{ steps.version.outputs.git }}/g" Cargo.toml
+      if: contains(matrix.os, 'windows')
+
+    - name: Build release (mac)
+      run: |
+        cargo bundle --release
+        (cd /Users/runner/work/${{ github.event.repository.name }}/${{ github.event.repository.name }}/target/release/bundle/osx/ && zip -rX $(ls | sed "s/.app/_${{ steps.version.outputs.git }}_macOS.zip/g") $(ls))
+      if: contains(matrix.os, 'mac')
+
+    - name: Build release (ubuntu)
+      run: |
+        cargo bundle --release
+      if: contains(matrix.os, 'ubuntu')
+
+    - name: Build release (windows)
+      shell: bash
+      run: |
+        cargo build --release
+      if: contains(matrix.os, 'windows')
+
+    - name: Publish release (macOS)
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+      with:
+        tag_name: ${{ steps.tag.outputs.release_tag }}
+        files: |
+          /Users/runner/work/${{ github.event.repository.name }}/${{ github.event.repository.name }}/target/release/bundle/osx/*.zip
+      if: contains(matrix.os, 'mac')
+
+    - name: Publish release (linux)
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+      with:
+        tag_name: ${{ steps.tag.outputs.release_tag }}
+        files: |
+          /home/runner/work/${{ github.event.repository.name }}/${{ github.event.repository.name }}/target/release/bundle/deb/*.deb
+      if: contains(matrix.os, 'ubuntu')
+
+    - name: Publish release (windows)
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+      with:
+        tag_name: ${{ steps.tag.outputs.release_tag }}
+        files: |
+          D:\a\${{ github.event.repository.name }}\${{ github.event.repository.name }}\target\release\*.exe
+      if: contains(matrix.os, 'windows')

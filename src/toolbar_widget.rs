@@ -57,7 +57,7 @@ impl ToolbarWidget {
         buttons.push(prev_button);
 
         let fullscreen_button = WidgetPod::new(ThemedButton::new(
-            Some(FULLSCREEN_VIEW),
+            None,
             Size::new(64., 64.),
             Point::new(32., 32.),
             include_str!("../resources/buttons/fullscreen/button.svg"),

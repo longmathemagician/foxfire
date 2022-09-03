@@ -17,10 +17,10 @@ codegen-units = 1
 panic = "abort"
 
 [dependencies]
-open_with = { version = "0.1.0", path = "dependencies/open_with" }
+open_with = { path = "dependencies/open_with" }
 trash = "2.1.5"
 image = "0.24.2"
-druid = { version = "0.7.0", git = "https://github.com/longmathemagician/druid.git", features = ["im", "svg"] }
+druid = { git = "https://github.com/longmathemagician/druid.git", features = ["im", "svg"] }
 dark-light = "0.2.2"
 wallpaper = "3.2.0"
 preferences = "1.1.0"

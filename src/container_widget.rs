@@ -47,7 +47,7 @@ impl ContainerWidget {
                 ctx.clip(osd_rect_rounded);
                 let osd_blur_capture = ctx.capture_image_area(osd_rect);
                 if let Ok(osd_background_image) = osd_blur_capture {
-                    let osd_blurred_background_result = ctx.blur_image(&osd_background_image, 15.);
+                    let osd_blurred_background_result = ctx.blur_image(&osd_background_image, 50.);
                     if let Ok(osd_blurred_background) = osd_blurred_background_result {
                         ctx.draw_image(
                             &osd_blurred_background,
@@ -230,7 +230,7 @@ impl Widget<AppState> for ContainerWidget {
             if is_full_paint {
                 let capture_result = ctx.capture_image_area(toolbar_blur_region_rect);
                 if let Ok(captured_image) = capture_result {
-                    let blur_result = ctx.blur_image(&captured_image, 15.);
+                    let blur_result = ctx.blur_image(&captured_image, 50.);
                     if let Ok(blurred_image) = blur_result {
                         ctx.draw_image(
                             &blurred_image,

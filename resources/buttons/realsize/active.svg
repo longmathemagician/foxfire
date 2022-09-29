@@ -7,8 +7,8 @@
    viewBox="0 0 8.4666664 8.466667"
    version="1.1"
    id="svg5"
-   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
-   sodipodi:docname="hot.svg"
+   inkscape:version="1.2 (dc2aedaf03, 2022-05-15)"
+   sodipodi:docname="recenter_active.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -26,12 +26,12 @@
      units="px"
      width="64px"
      inkscape:zoom="22.627417"
-     inkscape:cx="16.219262"
+     inkscape:cx="19.136077"
      inkscape:cy="15.291184"
      inkscape:window-width="1920"
-     inkscape:window-height="1009"
-     inkscape:window-x="-8"
-     inkscape:window-y="-8"
+     inkscape:window-height="995"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
      inkscape:window-maximized="1"
      inkscape:current-layer="g1219"
      inkscape:showpageshadow="0"
@@ -105,18 +105,18 @@
           <g
              id="g1256"
              transform="matrix(0.89360237,0,0,0.89360237,1.982334,0.46914815)"
-             style="fill:#81a1c1">
+             style="fill:#4c566a">
             <g
                id="path961"
                inkscape:transform-center-y="0.069910694"
-               transform="matrix(0,-0.65745479,0.3906802,0,19.78396,12.409401)"
-               style="fill:#81a1c1">
+               transform="matrix(0,-0.65745479,0.3906802,0,15.570019,12.54742)"
+               style="fill:#4c566a">
               <path
-                 style="color:#000000;fill:#81a1c1;stroke-width:0.888259;-inkscape-stroke:none"
+                 style="color:#000000;stroke-width:0.888259;-inkscape-stroke:none;fill:#4c566a"
                  d="m 12.595339,1.4630468 -0.384361,-0.62241742 -0.346849,-0.64407521 0.73121,-0.0216578 0.73121,0.0216577 -0.346849,0.64407526 z"
                  id="path334" />
               <path
-                 style="color:#000000;fill:#81a1c1;-inkscape-stroke:none"
+                 style="color:#000000;fill:#4c566a;-inkscape-stroke:none"
                  d="M 12.595703,-0.26953125 11.132813,-0.2265625 11.826172,1.0625 12.595703,2.3085938 12.972656,1.6972656 13.365234,1.0625 14.058594,-0.2265625 Z"
                  id="path336" />
             </g>
@@ -124,48 +124,52 @@
                id="path961-4"
                inkscape:transform-center-y="-0.069910373"
                transform="matrix(0,-0.65745479,-0.3906802,0,22.251964,12.558589)"
-               style="fill:#81a1c1">
+               style="fill:#4c566a">
               <path
-                 style="color:#000000;fill:#81a1c1;-inkscape-stroke:none"
-                 d="m 12.822076,10.515407 -1.46289,0.04297 0.693359,1.289062 0.769531,1.246094 0.376953,-0.611328 0.392578,-0.634766 0.69336,-1.289062 z"
+                 style="color:#000000;stroke-width:0.888259;-inkscape-stroke:none;fill:#4c566a"
+                 d="m 12.595339,1.4630468 -0.384361,-0.62241742 -0.346849,-0.64407521 0.73121,-0.0216578 0.73121,0.0216577 -0.346849,0.64407526 z"
+                 id="path340" />
+              <path
+                 style="color:#000000;fill:#4c566a;-inkscape-stroke:none"
+                 d="M 12.595703,-0.26953125 11.132813,-0.2265625 11.826172,1.0625 12.595703,2.3085938 12.972656,1.6972656 13.365234,1.0625 14.058594,-0.2265625 Z"
                  id="path342" />
             </g>
             <g
                id="g1039"
                transform="rotate(-90,18.433991,1.256939)"
-               style="fill:#81a1c1">
+               style="fill:#4c566a">
               <g
                  id="path961-9"
                  inkscape:transform-center-y="0.069910694"
-                 transform="matrix(0,-0.65745479,0.3906802,0,16.473516,10.015045)"
-                 style="fill:#81a1c1">
+                 transform="matrix(0,-0.65745479,0.3906802,0,12.220798,9.9705774)"
+                 style="fill:#4c566a">
                 <path
-                   style="color:#000000;fill:#81a1c1;stroke-width:0.888259;-inkscape-stroke:none"
+                   style="color:#000000;stroke-width:0.888259;-inkscape-stroke:none;fill:#4c566a"
                    d="m 12.595339,1.4630468 -0.384361,-0.62241742 -0.346849,-0.64407521 0.73121,-0.0216578 0.73121,0.0216577 -0.346849,0.64407526 z"
                    id="path346" />
                 <path
-                   style="color:#000000;fill:#81a1c1;-inkscape-stroke:none"
+                   style="color:#000000;fill:#4c566a;-inkscape-stroke:none"
                    d="M 12.595703,-0.26953125 11.132813,-0.2265625 11.826172,1.0625 12.595703,2.3085938 12.972656,1.6972656 13.365234,1.0625 14.058594,-0.2265625 Z"
                    id="path348" />
               </g>
               <g
                  id="path961-4-5"
                  inkscape:transform-center-y="-0.069910373"
-                 transform="matrix(0,-0.65745479,-0.3906802,0,14.676196,10.015045)"
-                 style="fill:#81a1c1">
+                 transform="matrix(0,-0.65745479,-0.3906802,0,18.902743,9.9817464)"
+                 style="fill:#4c566a">
                 <path
-                   style="color:#000000;fill:#81a1c1;stroke-width:0.888259;-inkscape-stroke:none"
+                   style="color:#000000;stroke-width:0.888259;-inkscape-stroke:none;fill:#4c566a"
                    d="m 12.595339,1.4630468 -0.384361,-0.62241742 -0.346849,-0.64407521 0.73121,-0.0216578 0.73121,0.0216577 -0.346849,0.64407526 z"
                    id="path352" />
                 <path
-                   style="color:#000000;fill:#81a1c1;-inkscape-stroke:none"
+                   style="color:#000000;fill:#4c566a;-inkscape-stroke:none"
                    d="M 12.595703,-0.26953125 11.132813,-0.2265625 11.826172,1.0625 12.595703,2.3085938 12.972656,1.6972656 13.365234,1.0625 14.058594,-0.2265625 Z"
                    id="path354" />
               </g>
             </g>
           </g>
           <path
-             style="color:#000000;fill:#81a1c1;-inkscape-stroke:none"
+             style="color:#000000;fill:#4c566a;-inkscape-stroke:none"
              d="m -6.3554687,16.685547 v 0.302734 4.091797 h 4.3945312 v -4.394531 z m 0.6074218,0.607422 h 3.1777344 v 3.177734 h -3.1777344 z"
              id="rect298"
              transform="rotate(-90)" />

@@ -10,11 +10,13 @@ use druid::{KbKey, Point, Target};
 use druid::{Modifiers, Size};
 
 use crate::app_state::*;
-use crate::commands::REDRAW_IMAGE;
+use crate::commands::{REALSIZE_IMAGE, RECENTER_IMAGE, REDRAW_IMAGE, ZOOM_IMAGE};
+use crate::image_container::ImageState;
 use crate::image_widget::*;
 use crate::toolbar_widget::*;
 
 use crate::osd_widget::{OSDPayload, OSDWidget};
+use crate::types::DisplayState;
 use crate::{LOAD_NEW_IMAGE, NEXT_IMAGE, PREV_IMAGE};
 
 // #[derive(Clone, Data)]
@@ -63,14 +65,53 @@ impl ContainerWidget {
 }
 
 impl Widget<AppState> for ContainerWidget {
-    fn event(&mut self, _ctx: &mut EventCtx, _event: &Event, _data: &mut AppState, _env: &Env) {
-        let event_sink = _ctx.get_external_handle();
+    fn event(&mut self, ctx: &mut EventCtx, event: &Event, data: &mut AppState, env: &Env) {
+        let event_sink = ctx.get_external_handle();
 
-        if let Event::Command(cmd) = _event {
+        if let Event::Command(cmd) = event {
             if cmd.get(REDRAW_IMAGE).is_some() {
-                _ctx.request_update();
+                ctx.request_update();
+                ctx.set_handled();
+            } else if cmd.get(ZOOM_IMAGE).is_some() {
+                let container_size = ctx.size();
+                let toolbar_height = data.get_toolbar_height();
+                self.image_widget
+                    .widget_mut()
+                    .zoom_image(container_size, toolbar_height);
+                ctx.request_update();
+                ctx.set_handled();
+            } else if cmd.get(RECENTER_IMAGE).is_some() {
+                let image_state_guard = data.get_image_ref();
+                let image_state = &mut *image_state_guard.lock().unwrap();
+                if let ImageState::Loaded(image_container) = image_state {
+                    let image_size = image_container.get_size();
+                    let container_size = ctx.size();
+                    let toolbar_height = data.get_toolbar_height();
+                    self.image_widget.widget_mut().fit_image(
+                        image_size,
+                        container_size,
+                        toolbar_height,
+                    );
+                    ctx.request_update();
+                    ctx.set_handled();
+                }
+            } else if cmd.get(REALSIZE_IMAGE).is_some() {
+                let image_state_guard = data.get_image_ref();
+                let image_state = &mut *image_state_guard.lock().unwrap();
+                if let ImageState::Loaded(image_container) = image_state {
+                    let image_size = image_container.get_size();
+                    let container_size = ctx.size();
+                    let toolbar_height = data.get_toolbar_height();
+                    self.image_widget.widget_mut().realsize_image(
+                        image_size,
+                        container_size,
+                        toolbar_height,
+                    );
+                    ctx.request_update();
+                    ctx.set_handled();
+                }
             }
-        } else if let Event::KeyDown(k) = _event {
+        } else if let Event::KeyDown(k) = event {
             // Key events are always handled here in the container
             if k.key == KbKey::ArrowRight {
                 event_sink
@@ -88,36 +129,36 @@ impl Widget<AppState> for ContainerWidget {
         } else if let Event::MouseDown(e)
         | Event::MouseUp(e)
         | Event::MouseMove(e)
-        | Event::Wheel(e) = _event
+        | Event::Wheel(e) = event
         {
-            if !_data.has_image() {
-                self.osd_widget.event(_ctx, _event, _data, _env);
+            if !data.has_image() {
+                self.osd_widget.event(ctx, event, data, env);
             }
 
             // Mouse events will be handled by either the toolbar or the image widget
-            if e.window_pos.y < _ctx.size().height - _data.get_toolbar_height() {
-                _ctx.set_focus(self.image_widget.id());
-                self.image_widget.event(_ctx, _event, _data, _env);
+            if e.window_pos.y < ctx.size().height - data.get_toolbar_height() {
+                ctx.set_focus(self.image_widget.id());
+                self.image_widget.event(ctx, event, data, env);
 
                 if e.button.is_left() || e.wheel_delta != Vec2::ZERO {
-                    _data.set_image_center_state(false);
+                    data.set_display_state(DisplayState::Zoomed(false));
                 }
             } else {
-                _ctx.set_focus(self.toolbar_widget.id());
-                self.toolbar_widget.event(_ctx, _event, _data, _env);
+                ctx.set_focus(self.toolbar_widget.id());
+                self.toolbar_widget.event(ctx, event, data, env);
             }
-        } else if let Event::Zoom(_e) = _event {
-            _ctx.set_focus(self.image_widget.id());
-            self.image_widget.event(_ctx, _event, _data, _env);
-            _data.set_image_center_state(false);
-        } else if let Event::Internal(_e) = _event {
-            self.image_widget.event(_ctx, _event, _data, _env);
-            self.toolbar_widget.event(_ctx, _event, _data, _env);
-        } else if let Event::WindowConnected = _event {
-        } else if let Event::WindowSize(_e) = _event {
+        } else if let Event::Zoom(_e) = event {
+            ctx.set_focus(self.image_widget.id());
+            self.image_widget.event(ctx, event, data, env);
+            data.set_display_state(DisplayState::Zoomed(false));
+        } else if let Event::Internal(_e) = event {
+            self.image_widget.event(ctx, event, data, env);
+            self.toolbar_widget.event(ctx, event, data, env);
+        } else if let Event::WindowConnected = event {
+        } else if let Event::WindowSize(_e) = event {
         } else {
-            self.image_widget.event(_ctx, _event, _data, _env);
-            self.toolbar_widget.event(_ctx, _event, _data, _env);
+            self.image_widget.event(ctx, event, data, env);
+            self.toolbar_widget.event(ctx, event, data, env);
         }
     }
 
@@ -135,20 +176,24 @@ impl Widget<AppState> for ContainerWidget {
         self.osd_widget.lifecycle(_ctx, _event, _data, _env);
     }
 
-    fn update(&mut self, _ctx: &mut UpdateCtx, _old_data: &AppState, _data: &AppState, _env: &Env) {
-        self.toolbar_widget.update(_ctx, _data, _env);
+    fn update(&mut self, _ctx: &mut UpdateCtx, _old_data: &AppState, data: &AppState, _env: &Env) {
+        self.toolbar_widget.update(_ctx, data, _env);
 
-        let mut needs_paint = true; // repaint on all updates, for now
+        let needs_paint = true; // repaint on all updates, for now
 
-        if _data.get_image_center_state() && !_old_data.get_image_center_state() {
-            self.image_widget
-                .widget_mut()
-                .update(_ctx, _old_data, _data, _env);
-            needs_paint = true;
-        }
+        // if data.get_image_center_state() && !old_data.get_image_center_state() {
+        //     self.image_widget
+        //         .widget_mut()
+        //         .update(_ctx, old_data, data, _env);
+        //     needs_paint = true;
+        // }
+
+        // if data.get_display_state() != old_data.get_display_state() {
+        // println!("Display state: {:#?}", data.get_display_state());
+        // }
 
         if needs_paint {
-            let new_window_title = String::from("Foxfire - ") + &_data.get_image_name();
+            let new_window_title = String::from("Foxfire - ") + &data.get_image_name();
             _ctx.window().set_title(&new_window_title);
             self.blur_cache = None;
             _ctx.children_changed();

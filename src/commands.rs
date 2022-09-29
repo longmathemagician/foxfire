@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::time::Instant;
 
-use crate::types::{Direction, NewImageContainer};
+use crate::types::{Direction, DisplayState, NewImageContainer};
 use crate::{platform_api_calls, AppState};
 use druid::commands::OPEN_FILE;
 use druid::{
@@ -26,6 +26,7 @@ pub const IMAGE_ROTATION_COMPLETE: Selector<SingleUse<NewImageContainer>> =
 
 pub const ZOOM_IMAGE: Selector<Instant> = Selector::new("zoom_image");
 pub const RECENTER_IMAGE: Selector<Instant> = Selector::new("recenter_image");
+pub const REALSIZE_IMAGE: Selector<Instant> = Selector::new("realsize_image");
 
 pub const DELETE_IMAGE: Selector<Instant> = Selector::new("delete_image");
 pub const LOAD_NEW_IMAGE: Selector<Instant> = Selector::new("load_new_image");
@@ -64,18 +65,22 @@ impl AppDelegate<AppState> for Delegate {
         } else if let Some(command_timestamp) = cmd.get(PREV_IMAGE) {
             data.load_prev_image(command_timestamp);
             Handled::Yes
+        }
+        // The next three events are also partially handled by the ContainerWidget
+        else if cmd.get(ZOOM_IMAGE).is_some() {
+            data.set_display_state(DisplayState::Zoomed(true));
+            Handled::No
         } else if cmd.get(RECENTER_IMAGE).is_some() {
-            data.set_image_center_state(true);
-            Handled::Yes
+            data.set_display_state(DisplayState::Centered(true));
+            Handled::No
+        } else if cmd.get(REALSIZE_IMAGE).is_some() {
+            data.set_display_state(DisplayState::RealSize(true));
+            Handled::No
         } else if cmd.get(FULLSCREEN_VIEW).is_some() {
             data.show_fullscreen_slideshow();
             Handled::Yes
         } else if cmd.get(DELETE_IMAGE).is_some() {
             data.delete_image();
-            Handled::Yes
-        } else if cmd.get(ZOOM_IMAGE).is_some() {
-            println!("Image zoom not yet implemented");
-
             Handled::Yes
         } else if let Some(command_timestamp) = cmd.get(ROTATE_LEFT) {
             data.rotate_in_memory(Direction::Left, command_timestamp);

@@ -1,9 +1,11 @@
 use crate::app_state::AppState;
 use crate::button_widget::*;
 use crate::commands::{
-    DELETE_IMAGE, NEXT_IMAGE, PREV_IMAGE, RECENTER_IMAGE, ROTATE_LEFT, ROTATE_RIGHT,
+    DELETE_IMAGE, NEXT_IMAGE, PREV_IMAGE, REALSIZE_IMAGE, RECENTER_IMAGE, ROTATE_LEFT,
+    ROTATE_RIGHT, ZOOM_IMAGE,
 };
-use crate::{FULLSCREEN_VIEW, TOGGLE_BLUR};
+use crate::types::DisplayState;
+use crate::TOGGLE_BLUR;
 use druid::widget::prelude::*;
 use druid::widget::Svg;
 use druid::widget::SvgData;
@@ -21,97 +23,133 @@ impl ToolbarWidget {
         let mut buttons = Vec::new();
 
         let zoom_button = WidgetPod::new(ThemedButton::new(
+            Some(ZOOM_IMAGE),
             None,
             Size::new(32., 32.),
             Point::new(8. + 68. + 2. * 32. + 6. * 4., 16.),
-            include_str!("../resources/buttons/zoom/button.svg"),
-            include_str!("../resources/buttons/zoom/hot.svg"),
-            include_str!("../resources/buttons/zoom/active.svg"),
-            include_str!("../resources/buttons/zoom/disabled.svg"),
+            [
+                include_str!("../resources/buttons/zoom/button.svg"),
+                include_str!("../resources/buttons/zoom/hot.svg"),
+                include_str!("../resources/buttons/zoom/active.svg"),
+                include_str!("../resources/buttons/zoom/disabled.svg"),
+            ]
+            .to_vec(),
             include_bytes!("../resources/buttons/generic/small_button_mask").to_vec(),
         ));
         buttons.push(zoom_button);
 
         let recenter_button = WidgetPod::new(ThemedButton::new(
             Some(RECENTER_IMAGE),
+            Some(REALSIZE_IMAGE),
             Size::new(32., 32.),
             Point::new(8. + 68. + 1. * 32. + 5. * 4., 16.),
-            include_str!("../resources/buttons/recenter/button.svg"),
-            include_str!("../resources/buttons/recenter/hot.svg"),
-            include_str!("../resources/buttons/recenter/active.svg"),
-            include_str!("../resources/buttons/recenter/disabled.svg"),
+            [
+                include_str!("../resources/buttons/recenter/button.svg"),
+                include_str!("../resources/buttons/recenter/hot.svg"),
+                include_str!("../resources/buttons/recenter/active.svg"),
+                include_str!("../resources/buttons/recenter/disabled.svg"),
+                include_str!("../resources/buttons/realsize/button.svg"),
+                include_str!("../resources/buttons/realsize/hot.svg"),
+                include_str!("../resources/buttons/realsize/active.svg"),
+                include_str!("../resources/buttons/realsize/disabled.svg"),
+            ]
+            .to_vec(),
             include_bytes!("../resources/buttons/generic/small_button_mask").to_vec(),
         ));
         buttons.push(recenter_button);
 
         let prev_button = WidgetPod::new(ThemedButton::new(
             Some(PREV_IMAGE),
+            None,
             Size::new(68., 32.),
             Point::new(32. + 58., 16.),
-            include_str!("../resources/buttons/prev/button.svg"),
-            include_str!("../resources/buttons/prev/hot.svg"),
-            include_str!("../resources/buttons/prev/active.svg"),
-            include_str!("../resources/buttons/prev/disabled.svg"),
+            [
+                include_str!("../resources/buttons/prev/button.svg"),
+                include_str!("../resources/buttons/prev/hot.svg"),
+                include_str!("../resources/buttons/prev/active.svg"),
+                include_str!("../resources/buttons/prev/disabled.svg"),
+            ]
+            .to_vec(),
             include_bytes!("../resources/buttons/prev/mask").to_vec(),
         ));
         buttons.push(prev_button);
 
         let fullscreen_button = WidgetPod::new(ThemedButton::new(
             None,
+            None,
             Size::new(64., 64.),
             Point::new(32., 32.),
-            include_str!("../resources/buttons/fullscreen/button.svg"),
-            include_str!("../resources/buttons/fullscreen/hot.svg"),
-            include_str!("../resources/buttons/fullscreen/active.svg"),
-            include_str!("../resources/buttons/fullscreen/disabled.svg"),
+            [
+                include_str!("../resources/buttons/fullscreen/button.svg"),
+                include_str!("../resources/buttons/fullscreen/hot.svg"),
+                include_str!("../resources/buttons/fullscreen/active.svg"),
+                include_str!("../resources/buttons/fullscreen/disabled.svg"),
+            ]
+            .to_vec(),
             include_bytes!("../resources/buttons/fullscreen/mask").to_vec(),
         ));
         buttons.push(fullscreen_button);
 
         let next_button = WidgetPod::new(ThemedButton::new(
             Some(NEXT_IMAGE),
+            None,
             Size::new(68., 32.),
             Point::new(32. - 54., 16.),
-            include_str!("../resources/buttons/next/button.svg"),
-            include_str!("../resources/buttons/next/hot.svg"),
-            include_str!("../resources/buttons/next/active.svg"),
-            include_str!("../resources/buttons/next/disabled.svg"),
+            [
+                include_str!("../resources/buttons/next/button.svg"),
+                include_str!("../resources/buttons/next/hot.svg"),
+                include_str!("../resources/buttons/next/active.svg"),
+                include_str!("../resources/buttons/next/disabled.svg"),
+            ]
+            .to_vec(),
             include_bytes!("../resources/buttons/next/mask").to_vec(),
         ));
         buttons.push(next_button);
 
         let rot_l_button = WidgetPod::new(ThemedButton::new(
             Some(ROTATE_LEFT),
+            None,
             Size::new(32., 32.),
             Point::new(8. - (68. + 1. * 32. + 1. * 4.), 16.),
-            include_str!("../resources/buttons/rot_l/button.svg"),
-            include_str!("../resources/buttons/rot_l/hot.svg"),
-            include_str!("../resources/buttons/rot_l/active.svg"),
-            include_str!("../resources/buttons/rot_l/disabled.svg"),
+            [
+                include_str!("../resources/buttons/rot_l/button.svg"),
+                include_str!("../resources/buttons/rot_l/hot.svg"),
+                include_str!("../resources/buttons/rot_l/active.svg"),
+                include_str!("../resources/buttons/rot_l/disabled.svg"),
+            ]
+            .to_vec(),
             include_bytes!("../resources/buttons/generic/small_button_mask").to_vec(),
         ));
         buttons.push(rot_l_button);
 
         let rot_r_button = WidgetPod::new(ThemedButton::new(
             Some(ROTATE_RIGHT),
+            None,
             Size::new(32., 32.),
             Point::new(8. - (68. + 2. * 32. + 2. * 4.), 16.),
-            include_str!("../resources/buttons/rot_r/button.svg"),
-            include_str!("../resources/buttons/rot_r/hot.svg"),
-            include_str!("../resources/buttons/rot_r/active.svg"),
-            include_str!("../resources/buttons/rot_r/disabled.svg"),
+            [
+                include_str!("../resources/buttons/rot_r/button.svg"),
+                include_str!("../resources/buttons/rot_r/hot.svg"),
+                include_str!("../resources/buttons/rot_r/active.svg"),
+                include_str!("../resources/buttons/rot_r/disabled.svg"),
+            ]
+            .to_vec(),
             include_bytes!("../resources/buttons/generic/small_button_mask").to_vec(),
         ));
         buttons.push(rot_r_button);
 
         let delete_button = WidgetPod::new(ThemedButton::new(
             Some(DELETE_IMAGE),
+            None,
             Size::new(32., 32.),
             Point::new(8. - (68. + 3. * 32. + 4. * 4.), 16.),
-            include_str!("../resources/buttons/del/button.svg"),
-            include_str!("../resources/buttons/del/hot.svg"),
-            include_str!("../resources/buttons/del/active.svg"),
-            include_str!("../resources/buttons/del/disabled.svg"),
+            [
+                include_str!("../resources/buttons/del/button.svg"),
+                include_str!("../resources/buttons/del/hot.svg"),
+                include_str!("../resources/buttons/del/active.svg"),
+                include_str!("../resources/buttons/del/disabled.svg"),
+            ]
+            .to_vec(),
             include_bytes!("../resources/buttons/generic/small_button_mask").to_vec(),
         ));
         buttons.push(delete_button);
@@ -174,19 +212,26 @@ impl Widget<AppState> for ToolbarWidget {
         }
     }
 
-    fn update(&mut self, _ctx: &mut UpdateCtx, _old_data: &AppState, _data: &AppState, _env: &Env) {
+    fn update(&mut self, _ctx: &mut UpdateCtx, _old_data: &AppState, data: &AppState, _env: &Env) {
         // Not efficient, but temporary until we find a way to not miss updates
-        if _data.has_image() && !_data.has_image_error() {
+        if data.has_image() && !data.has_image_error() {
             for button in self.buttons.iter_mut() {
                 button.widget_mut().enable();
             }
-            if _data.get_image_list_size() == 1 {
+            if data.get_image_list_size() == 1 {
                 // Disable the next & previous buttons if there is only one image
                 self.buttons[2].widget_mut().disable();
                 self.buttons[4].widget_mut().disable();
             }
-            if _data.get_image_center_state() {
-                self.buttons[1].widget_mut().disable();
+            // TODO: Fix this to work with the new state tracking
+            // if _data.get_image_center_state() {
+            //     self.buttons[1].widget_mut().disable();
+            // }
+            // let display_state = data.get_display_state();
+            match data.get_display_state() {
+                DisplayState::Centered(_) => self.buttons[1].widget_mut().set_command_index(1),
+                DisplayState::RealSize(_) => self.buttons[1].widget_mut().set_command_index(0),
+                DisplayState::Zoomed(_) => self.buttons[1].widget_mut().set_command_index(0),
             }
         } else {
             for button in self.buttons.iter_mut() {

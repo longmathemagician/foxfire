@@ -13,8 +13,9 @@ use druid::{
 use image::{DynamicImage, ImageOutputFormat};
 use preferences::{AppInfo, Preferences, PreferencesMap};
 
+use crate::commands::RECENTER_IMAGE;
 use crate::image_container::*;
-use crate::types::{Direction, NewImageContainer};
+use crate::types::{Direction, DisplayState, NewImageContainer};
 use crate::{IMAGE_LOAD_FAILURE, IMAGE_LOAD_SUCCESS, IMAGE_ROTATION_COMPLETE, REDRAW_IMAGE};
 
 const APP_SIG: AppInfo = AppInfo {
@@ -28,12 +29,12 @@ pub struct AppState {
     window_id: Option<WindowId>,
     #[data(ignore)]
     current_image: Arc<Mutex<ImageState>>,
+    display_state: DisplayState,
     command_queue: Arc<Mutex<Vec<Command>>>,
     loading_new_image: Arc<Mutex<bool>>,
     rotating_image: Arc<Mutex<bool>>,
     current_image_index: usize,
     current_image_name: String,
-    image_recenter_required: bool,
     image_list: Arc<Mutex<Vec<PathBuf>>>,
     druid_event_sink: Arc<Mutex<ExtEventSink>>,
     pub dark_theme_enabled: bool,
@@ -50,12 +51,12 @@ impl AppState {
         Self {
             window_id: None,
             current_image: Arc::new(Mutex::new(ImageState::Empty)),
+            display_state: DisplayState::Centered(false),
             command_queue: Arc::new(Mutex::new(vec![])),
             loading_new_image: Arc::new(Mutex::new(false)),
             rotating_image: Arc::new(Mutex::new(false)),
             current_image_index: 0,
             current_image_name: String::new(),
-            image_recenter_required: false,
             image_list: Arc::new(Mutex::new(Vec::new())),
             druid_event_sink: Arc::new(Mutex::new(event_sink)),
             dark_theme_enabled,
@@ -80,12 +81,19 @@ impl AppState {
             ImageState::Empty => false,
         }
     }
-    pub fn get_image_center_state(&self) -> bool {
-        self.image_recenter_required
+
+    pub fn get_display_state(&self) -> &DisplayState {
+        &self.display_state
     }
-    pub fn set_image_center_state(&mut self, state: bool) {
-        self.image_recenter_required = state;
+
+    pub fn get_display_state_mut(&mut self) -> &mut DisplayState {
+        &mut self.display_state
     }
+
+    pub fn set_display_state(&mut self, state: DisplayState) {
+        self.display_state = state
+    }
+
     pub fn set_image_list(&mut self, index: usize, list: Vec<PathBuf>) {
         self.current_image_index = index;
         self.image_list = Arc::new(Mutex::new(list));
@@ -231,7 +239,11 @@ impl AppState {
                     .into_string()
                     .unwrap();
                 self.set_current_image_name(image_name);
-                self.image_recenter_required = true;
+                // self.set_display_state(DisplayState::Centered(true));
+                let event_sink = self.druid_event_sink.lock().unwrap();
+                event_sink
+                    .submit_command(RECENTER_IMAGE, Instant::now(), Target::Auto)
+                    .expect("Failed to send command");
             }
         }
     }
@@ -249,7 +261,7 @@ impl AppState {
             .into_string()
             .unwrap();
         self.set_current_image_name(image_name);
-        self.image_recenter_required = true;
+        // self.get_display_state_mut().set();
     }
     pub fn get_image_ref(&self) -> Arc<Mutex<ImageState>> {
         self.current_image.clone()
@@ -431,7 +443,7 @@ impl AppState {
         *image_state = ImageState::Empty;
         self.set_image_list(0, Vec::new());
         self.current_image_name = String::new();
-        self.image_recenter_required = false;
+        self.get_display_state_mut().clear();
     }
 
     pub fn redraw_widgets(&mut self) {

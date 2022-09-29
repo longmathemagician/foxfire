@@ -3,14 +3,19 @@ use druid::widget::{Svg, SvgData};
 use druid::{MouseButton, Point, Selector, Target, WidgetPod};
 use std::time::Instant;
 
-pub struct ThemedButton {
-    command: Option<Selector<Instant>>,
-    size: Size,
-    offset: Point,
+struct ButtonImageContainer {
     image: WidgetPod<bool, Svg>,
     image_hot: WidgetPod<bool, Svg>,
     image_active: WidgetPod<bool, Svg>,
     image_disabled: WidgetPod<bool, Svg>,
+}
+
+pub struct ThemedButton {
+    active_command: Option<Selector<Instant>>,
+    command_list: Vec<Selector<Instant>>,
+    size: Size,
+    offset: Point,
+    images: Vec<ButtonImageContainer>,
     mask: Vec<u8>,
     is_hot: bool,
     is_pressed: bool,
@@ -19,27 +24,57 @@ pub struct ThemedButton {
 
 impl ThemedButton {
     pub fn new(
-        command: Option<Selector<Instant>>,
+        primary_command: Option<Selector<Instant>>,
+        secondary_command: Option<Selector<Instant>>,
         size: Size,
         offset: Point,
-        image: &str,
-        image_hot: &str,
-        image_active: &str,
-        image_disabled: &str,
+        image_sources: Vec<&str>,
         button_mask: Vec<u8>,
     ) -> Self {
+        let mut command_list: Vec<Selector<Instant>> = Vec::new();
+        let mut active_command: Option<Selector<Instant>> = None;
+        if let Some(command) = primary_command {
+            command_list.push(command);
+            active_command = Some(command);
+            if let Some(command) = secondary_command {
+                command_list.push(command);
+            }
+        }
+
+        let mut images: Vec<ButtonImageContainer> = Vec::new();
+        // TODO: Clean this up
+        let primary_button_images = ButtonImageContainer {
+            image: WidgetPod::new(Svg::new(image_sources[0].parse::<SvgData>().unwrap())),
+            image_hot: WidgetPod::new(Svg::new(image_sources[1].parse::<SvgData>().unwrap())),
+            image_active: WidgetPod::new(Svg::new(image_sources[2].parse::<SvgData>().unwrap())),
+            image_disabled: WidgetPod::new(Svg::new(image_sources[3].parse::<SvgData>().unwrap())),
+        };
+        images.push(primary_button_images);
+
+        if command_list.len() > 1 {
+            let secondary_button_images = ButtonImageContainer {
+                image: WidgetPod::new(Svg::new(image_sources[4].parse::<SvgData>().unwrap())),
+                image_hot: WidgetPod::new(Svg::new(image_sources[5].parse::<SvgData>().unwrap())),
+                image_active: WidgetPod::new(Svg::new(
+                    image_sources[6].parse::<SvgData>().unwrap(),
+                )),
+                image_disabled: WidgetPod::new(Svg::new(
+                    image_sources[7].parse::<SvgData>().unwrap(),
+                )),
+            };
+            images.push(secondary_button_images);
+        }
+
         Self {
-            command,
+            active_command,
+            command_list,
             size,
             offset,
-            image: WidgetPod::new(Svg::new(image.parse::<SvgData>().unwrap())),
-            image_hot: WidgetPod::new(Svg::new(image_hot.parse::<SvgData>().unwrap())),
-            image_active: WidgetPod::new(Svg::new(image_active.parse::<SvgData>().unwrap())),
-            image_disabled: WidgetPod::new(Svg::new(image_disabled.parse::<SvgData>().unwrap())),
+            images,
             mask: button_mask,
             is_hot: false,
             is_pressed: false,
-            is_enabled: matches!(command, Some(_)),
+            is_enabled: matches!(primary_command, Some(_)),
         }
     }
     pub fn get_offset(&self) -> Point {
@@ -50,6 +85,10 @@ impl ThemedButton {
     }
     pub fn disable(&mut self) {
         self.is_enabled = false;
+    }
+    pub fn set_command_index(&mut self, index: usize) {
+        // TODO: Add bounds checking
+        self.active_command = Some(self.command_list[index]);
     }
 }
 
@@ -62,7 +101,7 @@ impl Widget<bool> for ThemedButton {
         let mut event_handled = false;
         let mut needs_repaint = false;
 
-        if let Some(command) = self.command {
+        if let Some(command) = self.active_command {
             if let Event::MouseMove(e) = event {
                 let mut x = e.pos.x as usize;
                 x = if x > (self.size.width - 1.) as usize {
@@ -128,10 +167,12 @@ impl Widget<bool> for ThemedButton {
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle, data: &bool, env: &Env) {
         if let LifeCycle::WidgetAdded = event {
-            self.image.lifecycle(ctx, event, data, env);
-            self.image_hot.lifecycle(ctx, event, data, env);
-            self.image_active.lifecycle(ctx, event, data, env);
-            self.image_disabled.lifecycle(ctx, event, data, env);
+            for i in self.images.iter_mut() {
+                i.image.lifecycle(ctx, event, data, env);
+                i.image_hot.lifecycle(ctx, event, data, env);
+                i.image_active.lifecycle(ctx, event, data, env);
+                i.image_disabled.lifecycle(ctx, event, data, env);
+            }
         }
         if let LifeCycle::FocusChanged(_) | LifeCycle::HotChanged(_) = event {
             if !ctx.is_active() || !ctx.is_hot() {
@@ -150,16 +191,26 @@ impl Widget<bool> for ThemedButton {
         data: &bool,
         env: &Env,
     ) -> Size {
-        self.image.layout(layout_ctx, &bc.loosen(), data, env);
-        self.image_hot.layout(layout_ctx, &bc.loosen(), data, env);
-        self.image_active
-            .layout(layout_ctx, &bc.loosen(), data, env);
-        self.image_disabled
-            .layout(layout_ctx, &bc.loosen(), data, env);
+        for i in self.images.iter_mut() {
+            i.image.layout(layout_ctx, &bc.loosen(), data, env);
+            i.image_hot.layout(layout_ctx, &bc.loosen(), data, env);
+            i.image_active.layout(layout_ctx, &bc.loosen(), data, env);
+            i.image_disabled.layout(layout_ctx, &bc.loosen(), data, env);
+        }
+
         self.size
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, data: &bool, env: &Env) {
+        let command_index = if let Some(command) = self.active_command {
+            if command == self.command_list[0] {
+                0
+            } else {
+                1
+            }
+        } else {
+            0
+        };
         let is_button_hot = self.is_hot;
         let is_context_hot = ctx.is_hot();
         let paint_region = *ctx
@@ -169,14 +220,16 @@ impl Widget<bool> for ThemedButton {
             .expect("Tried to paint with an invalid clip region");
 
         ctx.with_child_ctx(paint_region, move |f| {
-            if !self.is_enabled || self.command.is_none() {
-                self.image_disabled.paint(f, data, env);
+            if !self.is_enabled || self.active_command.is_none() {
+                self.images[command_index]
+                    .image_disabled
+                    .paint(f, data, env);
             } else if self.is_pressed && is_button_hot {
-                self.image_active.paint(f, data, env);
+                self.images[command_index].image_active.paint(f, data, env);
             } else if is_context_hot && is_button_hot {
-                self.image_hot.paint(f, data, env);
+                self.images[command_index].image_hot.paint(f, data, env);
             } else {
-                self.image.paint(f, data, env);
+                self.images[command_index].image.paint(f, data, env);
             }
         });
     }
